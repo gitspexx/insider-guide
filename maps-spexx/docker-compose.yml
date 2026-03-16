@@ -1,6 +1,10 @@
 services:
   maps-spexx:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     container_name: maps-spexx
     restart: unless-stopped
     ports:
