@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "maps-spexx",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--host", "--root", "maps-spexx"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--host"],
       "port": 5173
     }
   ]

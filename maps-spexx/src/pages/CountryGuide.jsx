@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import CategoryFilter from '../components/CategoryFilter'
 import LocationFilter from '../components/LocationFilter'
 import BusinessCard from '../components/BusinessCard'
 import EmailCapture from '../components/EmailCapture'
+
+// Extract the main city from compound city strings like "Medellín, El Poblado, Medellin"
+function getMainCity(city) {
+  if (!city) return null
+  const firstPart = city.split(',')[0].trim()
+  return firstPart
+}
 
 export default function CountryGuide() {
   const { slug } = useParams()
@@ -56,11 +64,21 @@ export default function CountryGuide() {
     setSearchParams(params)
   }
 
-  const uniqueLocations = [...new Set(businesses.map((b) => b.city).filter(Boolean))].sort()
+  // Build main city list with counts
+  const cityMap = {}
+  businesses.forEach((b) => {
+    const main = getMainCity(b.city)
+    if (main) {
+      cityMap[main] = (cityMap[main] || 0) + 1
+    }
+  })
+  const uniqueLocations = Object.keys(cityMap).sort()
+  const locationCounts = cityMap
 
+  // Filter by main city (matches any business whose city starts with the selected main city)
   const filtered = businesses
     .filter((b) => activeCategory === 'all' || b.category === activeCategory)
-    .filter((b) => activeLocation === 'all' || b.city === activeLocation)
+    .filter((b) => activeLocation === 'all' || getMainCity(b.city) === activeLocation)
 
   // Sort: partner first, then featured, then listed
   const sorted = [...filtered].sort((a, b) => {
@@ -71,7 +89,13 @@ export default function CountryGuide() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="text-text-dim text-xs uppercase tracking-widest">Loading...</span>
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-text-dim text-xs uppercase tracking-widest"
+        >
+          Loading...
+        </motion.span>
       </div>
     )
   }
@@ -101,7 +125,12 @@ export default function CountryGuide() {
       </header>
 
       {/* Country Hero */}
-      <section className="max-w-6xl mx-auto px-4 py-12 border-b border-border">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="max-w-6xl mx-auto px-4 py-12 border-b border-border"
+      >
         <span className="text-[10px] uppercase tracking-[0.3em] text-gold-dim block mb-2">
           {country.coordinates}
         </span>
@@ -119,26 +148,46 @@ export default function CountryGuide() {
             </span>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Filters + Grid */}
       <section className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8 flex flex-col gap-3">
-          <CategoryFilter active={activeCategory} onChange={handleCategoryChange} />
-          <LocationFilter locations={uniqueLocations} active={activeLocation} onChange={handleLocationChange} />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="mb-8 flex flex-col gap-3"
+        >
+          <CategoryFilter active={activeCategory} onChange={handleCategoryChange} businesses={businesses} />
+          <LocationFilter locations={uniqueLocations} counts={locationCounts} active={activeLocation} onChange={handleLocationChange} />
+        </motion.div>
 
-        {sorted.length === 0 ? (
-          <div className="text-center py-12">
-            <span className="text-text-dim text-sm">No places in this category yet.</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sorted.map((biz) => (
-              <BusinessCard key={biz.id} business={biz} />
-            ))}
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {sorted.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-12"
+            >
+              <span className="text-text-dim text-sm">No places in this category yet.</span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`${activeCategory}-${activeLocation}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {sorted.map((biz, index) => (
+                <BusinessCard key={biz.id} business={biz} index={index} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Email capture */}

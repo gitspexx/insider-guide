@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+
 const CATEGORY_COLORS = {
   eat: 'text-blue-400',
   cafe: 'text-orange-400',
@@ -9,18 +11,22 @@ const CATEGORY_COLORS = {
   misc: 'text-gray-400',
 }
 
-export default function BusinessCard({ business }) {
+export default function BusinessCard({ business, index = 0 }) {
   const isPartner = business.tier === 'partner'
   const isFeatured = business.tier === 'featured'
 
   return (
-    <div
-      className={`relative bg-bg-card border rounded-sm p-5 transition-all ${
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className={`relative bg-bg-card border rounded-sm p-5 transition-shadow ${
         isPartner
-          ? 'border-gold/40 col-span-full md:col-span-2'
+          ? 'border-gold/40 col-span-full md:col-span-2 hover:shadow-[0_4px_24px_rgba(200,155,60,0.12)]'
           : isFeatured
-          ? 'border-gold/20'
-          : 'border-border hover:border-white/15'
+          ? 'border-gold/20 hover:shadow-[0_4px_24px_rgba(200,155,60,0.08)]'
+          : 'border-border hover:border-white/15 hover:shadow-[0_4px_20px_rgba(255,255,255,0.03)]'
       }`}
     >
       {isPartner && (
@@ -81,6 +87,6 @@ export default function BusinessCard({ business }) {
           </a>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }
