@@ -7,11 +7,9 @@ import LocationFilter from '../components/LocationFilter'
 import BusinessCard from '../components/BusinessCard'
 import EmailCapture from '../components/EmailCapture'
 
-// Extract the main city from compound city strings like "Medellín, El Poblado, Medellin"
 function getMainCity(city) {
   if (!city) return null
-  const firstPart = city.split(',')[0].trim()
-  return firstPart
+  return city.split(',')[0].trim()
 }
 
 export default function CountryGuide() {
@@ -35,14 +33,12 @@ export default function CountryGuide() {
 
       if (countryData) {
         setCountry(countryData)
-
         const { data: bizData } = await supabase
           .from('businesses')
           .select('*')
           .eq('country_id', countryData.id)
           .eq('published', true)
           .order('name')
-
         setBusinesses(bizData || [])
       }
       setLoading(false)
@@ -64,23 +60,18 @@ export default function CountryGuide() {
     setSearchParams(params)
   }
 
-  // Build main city list with counts
   const cityMap = {}
   businesses.forEach((b) => {
     const main = getMainCity(b.city)
-    if (main) {
-      cityMap[main] = (cityMap[main] || 0) + 1
-    }
+    if (main) cityMap[main] = (cityMap[main] || 0) + 1
   })
   const uniqueLocations = Object.keys(cityMap).sort()
   const locationCounts = cityMap
 
-  // Filter by main city (matches any business whose city starts with the selected main city)
   const filtered = businesses
     .filter((b) => activeCategory === 'all' || b.category === activeCategory)
     .filter((b) => activeLocation === 'all' || getMainCity(b.city) === activeLocation)
 
-  // Sort: partner first, then featured, then listed
   const sorted = [...filtered].sort((a, b) => {
     const tierOrder = { partner: 0, featured: 1, listed: 2 }
     return (tierOrder[a.tier] || 2) - (tierOrder[b.tier] || 2)
@@ -91,7 +82,8 @@ export default function CountryGuide() {
       <div className="min-h-screen flex items-center justify-center">
         <motion.span
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: [0, 1, 0.5, 1] }}
+          transition={{ duration: 1.5 }}
           className="text-text-dim text-xs uppercase tracking-widest"
         >
           Loading...
@@ -111,10 +103,15 @@ export default function CountryGuide() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border">
+      {/* Header — sticky blur */}
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="border-b border-border backdrop-blur-sm bg-bg/80 sticky top-0 z-40"
+      >
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="text-gold text-xs uppercase tracking-wider no-underline hover:text-gold/80">
+          <Link to="/" className="text-gold text-xs uppercase tracking-wider no-underline hover:text-gold/80 transition-colors">
             ← All guides
           </Link>
           <div className="text-right">
@@ -122,40 +119,63 @@ export default function CountryGuide() {
             <span className="text-gold text-sm tracking-wider">@alexspexx</span>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Country Hero */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="max-w-6xl mx-auto px-4 py-12 border-b border-border"
-      >
-        <span className="text-[10px] uppercase tracking-[0.3em] text-gold-dim block mb-2">
-          {country.coordinates}
-        </span>
-        <div className="flex items-start gap-4">
-          <span className="text-5xl">{country.flag_emoji}</span>
-          <div>
-            <h1 className="font-heading text-5xl md:text-7xl tracking-wider text-white leading-none">
-              {country.name.toUpperCase()}
-            </h1>
-            <p className="font-serif italic text-text-secondary text-sm mt-2">
-              {country.tagline}
-            </p>
-            <span className="text-[10px] text-gold uppercase tracking-wider mt-1 block">
-              {businesses.length} places
-            </span>
+      <section className="relative overflow-hidden">
+        {/* Ambient orb behind hero */}
+        <div className="ambient-orb w-[250px] h-[250px] bg-gold/8 top-4 right-1/4" style={{ animationDelay: '-3s' }} />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="max-w-6xl mx-auto px-4 py-12 relative z-10"
+        >
+          <span className="text-[10px] uppercase tracking-[0.3em] text-gold-dim block mb-2">
+            {country.coordinates}
+          </span>
+          <div className="flex items-start gap-4">
+            <motion.span
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2, type: 'spring' }}
+              className="text-5xl md:text-6xl"
+            >
+              {country.flag_emoji}
+            </motion.span>
+            <div>
+              <h1 className="font-heading text-5xl md:text-7xl tracking-wider leading-none">
+                <span className="text-gold-gradient">{country.name.toUpperCase()}</span>
+              </h1>
+              <motion.p
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                className="font-serif italic text-text-secondary text-sm mt-2"
+              >
+                {country.tagline}
+              </motion.p>
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="text-[10px] text-gold uppercase tracking-wider mt-1 block"
+              >
+                {businesses.length} places
+              </motion.span>
+            </div>
           </div>
-        </div>
-      </motion.section>
+        </motion.div>
+        <div className="shimmer-line max-w-6xl mx-auto" />
+      </section>
 
       {/* Filters + Grid */}
       <section className="max-w-6xl mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
           className="mb-8 flex flex-col gap-3"
         >
           <CategoryFilter active={activeCategory} onChange={handleCategoryChange} businesses={businesses} />
@@ -176,9 +196,9 @@ export default function CountryGuide() {
           ) : (
             <motion.div
               key={`${activeCategory}-${activeLocation}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >

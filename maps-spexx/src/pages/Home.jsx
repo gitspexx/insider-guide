@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import CountryCard from '../components/CountryCard'
 import PaywallModal from '../components/PaywallModal'
@@ -60,7 +61,6 @@ export default function Home() {
   }, [])
 
   function isUnlocked(slug) {
-    // Colombia is always free
     if (slug === 'colombia') return true
     const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
     return grants.includes(slug)
@@ -69,15 +69,27 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="text-text-dim text-xs uppercase tracking-widest">Loading...</span>
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0.5, 1] }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+          className="text-text-dim text-xs uppercase tracking-widest"
+        >
+          Loading...
+        </motion.span>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border">
+      {/* Header — sticky with blur */}
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="border-b border-border backdrop-blur-sm bg-bg/80 sticky top-0 z-40"
+      >
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <span className="text-[9px] uppercase tracking-[0.3em] text-gold-dim block">Insider Guide</span>
@@ -87,40 +99,70 @@ export default function Home() {
             Admin
           </a>
         </div>
-      </header>
+      </motion.header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 py-20 text-center">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-gold-dim block mb-4">
+      <section className="relative max-w-6xl mx-auto px-4 py-24 md:py-32 text-center overflow-hidden">
+        {/* Ambient glow orbs */}
+        <div className="ambient-orb w-[300px] h-[300px] bg-gold/10 top-0 left-1/4 -translate-x-1/2" />
+        <div className="ambient-orb w-[200px] h-[200px] bg-gold/8 bottom-0 right-1/4 translate-x-1/2" style={{ animationDelay: '-5s' }} />
+
+        <motion.span
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-[10px] uppercase tracking-[0.3em] text-gold-dim block mb-6 relative z-10"
+        >
           100 Countries Challenge
-        </span>
-        <h1 className="font-heading text-6xl md:text-8xl tracking-wider leading-none text-white mb-4">
+        </motion.span>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="font-heading text-6xl md:text-9xl tracking-wider leading-[0.9] text-white mb-6 relative z-10"
+        >
           THE<br />
-          <span className="text-gold">INSIDER</span><br />
+          <span className="text-gold-gradient">INSIDER</span><br />
           GUIDE
-        </h1>
-        <p className="font-serif italic text-text-secondary text-lg max-w-md mx-auto">
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="font-serif italic text-text-secondary text-lg md:text-xl max-w-lg mx-auto relative z-10"
+        >
           The world, curated by someone who's actually been there.
-        </p>
+        </motion.p>
       </section>
 
+      {/* Shimmer divider */}
+      <div className="shimmer-line max-w-6xl mx-auto" />
+
       {/* Country Grid */}
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="flex items-center gap-4 mb-8">
+      <section className="max-w-6xl mx-auto px-4 py-16 pb-20">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="flex items-center gap-4 mb-10"
+        >
           <span className="text-[10px] uppercase tracking-widest text-text-dim">
             Available Guides
           </span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+          <div className="flex-1 gradient-divider" />
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {countries.map((country) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {countries.map((country, index) => (
             <CountryCard
               key={country.id}
               country={country}
               count={counts[country.id] || 0}
               locked={!isUnlocked(country.slug)}
               onLockedClick={() => setPaywallCountry(country)}
+              index={index}
             />
           ))}
         </div>
