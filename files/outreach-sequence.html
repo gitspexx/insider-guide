@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outreach Sequence · alexspexx</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --gold: #C89B3C;
+  --gold-dim: rgba(200,155,60,0.45);
+  --white: #fff;
+  --off: rgba(255,255,255,0.62);
+  --dim: rgba(255,255,255,0.3);
+  --bg: #0a0805;
+  --bg2: #0f0d09;
+  --border: rgba(255,255,255,0.07);
+  --email: #4A90D9;
+  --email-dim: rgba(74,144,217,0.18);
+  --wa: #25D366;
+  --wa-dim: rgba(37,211,102,0.12);
+  --ig: #E1306C;
+  --ig-dim: rgba(225,48,108,0.12);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Space Mono', monospace;
+  padding: 0;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px; opacity: 0.035; mix-blend-mode: overlay;
+}
+
+/* ── LAYOUT ── */
+.shell {
+  position: relative; z-index: 1;
+  max-width: 900px; margin: 0 auto;
+  padding: 60px 40px 100px;
+}
+
+/* ── PAGE HEADER ── */
+.page-head {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 32px; margin-bottom: 52px;
+}
+.page-eyebrow {
+  font-size: 8px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 12px; display: block;
+}
+.page-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 52px; line-height: 0.88; letter-spacing: 1px;
+  color: var(--white); margin-bottom: 16px;
+}
+.page-sub {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; font-style: italic; color: var(--off);
+  max-width: 520px; line-height: 1.55;
+}
+.page-sub em { color: var(--gold); font-style: normal; }
+
+/* ── CHANNEL LEGEND ── */
+.legend {
+  display: flex; gap: 20px; margin-bottom: 48px; flex-wrap: wrap;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--dim);
+}
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* ── OVERVIEW TIMELINE ── */
+.timeline-overview {
+  display: flex; align-items: stretch;
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 3px;
+  overflow: hidden; margin-bottom: 56px;
+}
+.tov-step {
+  flex: 1; background: var(--bg2);
+  padding: 14px 12px;
+  display: flex; flex-direction: column; gap: 5px;
+  position: relative;
+}
+.tov-step::after {
+  content: '→';
+  position: absolute; right: -10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px; color: var(--border); z-index: 2;
+}
+.tov-step:last-child::after { display: none; }
+.tov-day {
+  font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--dim);
+}
+.tov-channel {
+  font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 700;
+}
+.tov-label {
+  font-size: 8.5px; color: var(--off); line-height: 1.4;
+}
+.ch-email { color: var(--email); }
+.ch-wa    { color: var(--wa); }
+.ch-ig    { color: var(--ig); }
+
+/* ── TOUCHPOINT CARDS ── */
+.tp-block { margin-bottom: 40px; }
+
+.tp-card {
+  border: 1px solid var(--border);
+  border-radius: 4px; overflow: hidden;
+}
+.tp-card.email { border-left: 3px solid var(--email); }
+.tp-card.wa    { border-left: 3px solid var(--wa); }
+.tp-card.ig    { border-left: 3px solid var(--ig); }
+
+.tp-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.tp-num {
+  font-family: 'Anton', sans-serif;
+  font-size: 28px; line-height: 1;
+  color: rgba(255,255,255,0.1);
+  width: 32px; flex-shrink: 0;
+}
+.tp-meta { flex: 1; }
+.tp-channel-tag {
+  font-size: 7.5px; letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: 700; display: block; margin-bottom: 2px;
+}
+.tp-name {
+  font-size: 13px; letter-spacing: 0.06em; color: var(--white);
+  text-transform: uppercase; font-family: 'Anton', sans-serif;
+  letter-spacing: 1px;
+}
+.tp-timing {
+  font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--dim); text-align: right;
+}
+.tp-timing span { display: block; }
+.tp-timing strong { color: var(--off); font-weight: 400; }
+
+.tp-body { padding: 20px 20px 16px; background: var(--bg); }
+
+/* subject line */
+.subject-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; margin-bottom: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); border-radius: 2px;
+}
+.subj-label {
+  font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--dim); flex-shrink: 0;
+}
+.subj-text {
+  font-size: 10px; color: var(--white); letter-spacing: 0.04em;
+}
+
+/* message box */
+.msg-box {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: 3px; padding: 16px 18px;
+  font-size: 11px; line-height: 1.85;
+  color: var(--off); white-space: pre-wrap;
+  margin-bottom: 12px; cursor: text;
+  transition: border-color 0.2s;
+}
+.msg-box:hover { border-color: rgba(255,255,255,0.12); }
+.var { color: var(--gold); background: rgba(200,155,60,0.1); padding: 0 3px; border-radius: 2px; font-size: 10px; }
+
+/* copy btn */
+.copy-row { display: flex; align-items: center; gap: 10px; }
+.copy-btn {
+  font-size: 7.5px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--dim); background: none;
+  border: 1px solid var(--border); padding: 6px 14px; border-radius: 2px;
+  cursor: pointer; font-family: 'Space Mono', monospace;
+  transition: all 0.2s;
+}
+.copy-btn:hover { border-color: rgba(200,155,60,0.3); color: var(--gold); }
+.copy-btn.done { color: var(--gold); border-color: rgba(200,155,60,0.4); }
+
+/* tactics note */
+.tactic {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-left: 2px solid rgba(200,155,60,0.2);
+  font-size: 9.5px; line-height: 1.7; color: var(--dim);
+}
+.tactic em { color: var(--gold-dim); font-style: normal; }
+.tactic strong { color: var(--off); font-weight: 700; }
+
+/* channel intro banners */
+.channel-intro {
+  padding: 16px 20px; margin-bottom: 20px;
+  border-radius: 3px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.channel-intro.email { background: var(--email-dim); border: 1px solid rgba(74,144,217,0.2); }
+.channel-intro.wa    { background: var(--wa-dim);    border: 1px solid rgba(37,211,102,0.2); }
+.channel-intro.ig    { background: var(--ig-dim);    border: 1px solid rgba(225,48,108,0.2); }
+.ci-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.ci-body {}
+.ci-title {
+  font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 5px;
+}
+.ci-title.email { color: var(--email); }
+.ci-title.wa    { color: var(--wa); }
+.ci-title.ig    { color: var(--ig); }
+.ci-desc { font-size: 10px; line-height: 1.65; color: var(--off); }
+.ci-desc em { font-style: normal; }
+.ci-desc.email em { color: var(--email); }
+.ci-desc.wa    em { color: var(--wa); }
+.ci-desc.ig    em { color: var(--ig); }
+
+/* section headers */
+.section-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 14px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.spacer { height: 48px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+
+/* notion tracker callout */
+.notion-box {
+  background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 20px 24px; margin-top: 52px;
+}
+.notion-title {
+  font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold-dim); margin-bottom: 14px;
+}
+.notion-cols {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
+}
+.nc {
+  background: var(--bg); padding: 10px 14px;
+}
+.nc-label {
+  font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 4px;
+}
+.nc-val {
+  font-size: 9.5px; color: var(--off); line-height: 1.4;
+}
+.nc-val em { color: var(--gold); font-style: normal; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- PAGE HEADER -->
+  <div class="page-head">
+    <span class="page-eyebrow">@alexspexx · Colombia Guide · Cold Outreach Playbook</span>
+    <div class="page-title">5-TOUCH<br>SEQUENCE</div>
+    <p class="page-sub">Email first. WhatsApp slow and surgical. Instagram contemporary and warm. <em>Every channel is a different door — use them all.</em></p>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:var(--email)"></span>Email</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--wa)"></span>WhatsApp</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--ig)"></span>Instagram</div>
+  </div>
+
+  <!-- TIMELINE OVERVIEW -->
+  <div class="timeline-overview">
+    <div class="tov-step">
+      <span class="tov-day">Day 1</span>
+      <span class="tov-channel ch-email">Email</span>
+      <span class="tov-label">Cold open. No link, no pitch.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 4</span>
+      <span class="tov-channel ch-email">Email</span>
+      <span class="tov-label">Follow-up. Add the link.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 9</span>
+      <span class="tov-channel ch-email">Email</span>
+      <span class="tov-label">Last email. Soft close.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 14</span>
+      <span class="tov-channel ch-wa">WhatsApp</span>
+      <span class="tov-label">First contact. Very brief.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 20</span>
+      <span class="tov-channel ch-wa">WhatsApp</span>
+      <span class="tov-label">Soft nudge only if seen.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 7+</span>
+      <span class="tov-channel ch-ig">Instagram</span>
+      <span class="tov-label">Engage first. DM second.</span>
+    </div>
+    <div class="tov-step">
+      <span class="tov-day">Day 14+</span>
+      <span class="tov-channel ch-ig">Instagram</span>
+      <span class="tov-label">DM. Contemporary tone.</span>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════ EMAIL ══════════════════════════ -->
+  <div class="section-title">Phase 01 · Email</div>
+
+  <div class="channel-intro email">
+    <div class="ci-icon">✉️</div>
+    <div class="ci-body">
+      <div class="ci-title email">Email strategy</div>
+      <div class="ci-desc email">Three emails, spaced out. <em>First email has no link</em> — this is intentional. It lowers the spam score and creates curiosity. The link only appears in email 2 once they've shown intent by opening or replying. Email 3 is a clean, no-pressure close. If all three get no response, the channel is done — move to WhatsApp.</div>
+    </div>
+  </div>
+
+  <!-- EMAIL 1 -->
+  <div class="tp-block">
+    <div class="tp-card email">
+      <div class="tp-head">
+        <div class="tp-num">01</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-email">Email</span>
+          <span class="tp-name">The Cold Open</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 1</span>
+          <strong>No link · No pitch</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="subject-row">
+          <span class="subj-label">Subject</span>
+          <span class="subj-text">Quick question about <span class="var">[Business name]</span></span>
+        </div>
+        <div class="msg-box" id="e1">Hi <span class="var">[Name]</span>,
+
+I'm Alex — travel content creator, currently building a curated guide to Colombia for a growing community of travelers planning their trip.
+
+I came across <span class="var">[Business name]</span> and it's exactly the kind of place the guide needs more of.
+
+Would you be open to being included?
+
+— Alex
+@alexspexx</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('e1',this)">Copy</button>
+        </div>
+        <div class="tactic">
+          <strong>Why no link?</strong> Cold emails with links hit spam harder and look like mass outreach. This reads like a human wrote it in 60 seconds. The goal of email 1 is a single "yes" or "tell me more" — nothing else. <em>Keep it under 60 words.</em>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 2 -->
+  <div class="tp-block">
+    <div class="tp-card email">
+      <div class="tp-head">
+        <div class="tp-num">02</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-email">Email</span>
+          <span class="tp-name">The Follow-Up</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 4</span>
+          <strong>Now add the link</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="subject-row">
+          <span class="subj-label">Subject</span>
+          <span class="subj-text">Re: Quick question about <span class="var">[Business name]</span></span>
+        </div>
+        <div class="msg-box" id="e2">Hey <span class="var">[Name]</span>,
+
+Following up in case this got buried.
+
+I'm building a travel guide to Colombia — curated spots shared with a community of travelers who are actively planning their trips. The guide lives online and grows over time.
+
+There's a small Featured placement that puts <span class="var">[Business name]</span> at the top of the <span class="var">[category]</span> section for $200, or a simple listing from $50 if you just want to be in the directory.
+
+Here's where the guide is heading: <span class="var">[link]</span>
+
+Worth 5 minutes?
+
+— Alex</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('e2',this)">Copy</button>
+        </div>
+        <div class="tactic">
+          <em>This is the first time you mention price.</em> Drop both tiers ($50 and $200) so they have an easy entry point. The $50 mention lowers resistance — it's an easy yes. If they bite on $50, you have a customer. Upgrade conversations happen later. <strong>Reply in the same thread</strong> — keeps the subject line familiar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMAIL 3 -->
+  <div class="tp-block">
+    <div class="tp-card email">
+      <div class="tp-head">
+        <div class="tp-num">03</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-email">Email</span>
+          <span class="tp-name">The Soft Close</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 9</span>
+          <strong>Last email · No guilt</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="subject-row">
+          <span class="subj-label">Subject</span>
+          <span class="subj-text">Closing the loop — <span class="var">[Business name]</span></span>
+        </div>
+        <div class="msg-box" id="e3">Hi <span class="var">[Name]</span>,
+
+Last message from me on this — I know inboxes get full.
+
+The Colombia guide is almost ready to launch. I'm keeping a small number of spots open for the <span class="var">[category]</span> section and wanted to give <span class="var">[Business name]</span> a chance before it goes live.
+
+If the timing isn't right, no problem at all — I can add you to the free directory and reach out again when I update the guide.
+
+Either way: <span class="var">[link]</span>
+
+— Alex</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('e3',this)">Copy</button>
+        </div>
+        <div class="tactic">
+          <strong>Never close with pressure.</strong> The "free directory" fallback gives them a no-cost exit that still keeps them in your world. Many businesses say yes to the free listing here and convert to paid later. <em>This email also reactivates people who missed the first two.</em>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+
+  <!-- ══════════════════════════ WHATSAPP ══════════════════════════ -->
+  <div class="section-title">Phase 02 · WhatsApp</div>
+
+  <div class="channel-intro wa">
+    <div class="ci-icon">💬</div>
+    <div class="ci-body">
+      <div class="ci-title wa">WhatsApp strategy — handle with care</div>
+      <div class="ci-desc wa">WhatsApp has the highest conversion rate but the highest risk. <em>Never blast.</em> One message at a time. Space them out. No links in the first message — WhatsApp flags link-first cold messages fast. Maximum 2 touchpoints on this channel before you stop. If they mark you as spam, your number gets restricted. Treat every message like you're texting a real person, because that's exactly what they'll feel.</div>
+    </div>
+  </div>
+
+  <!-- WA 1 -->
+  <div class="tp-block">
+    <div class="tp-card wa">
+      <div class="tp-head">
+        <div class="tp-num">04</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-wa">WhatsApp</span>
+          <span class="tp-name">First Contact</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 14</span>
+          <strong>No link · Very short</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="msg-box" id="w1">Hola <span class="var">[Name]</span> 👋 Soy Alex, creador de contenido de viajes.
+
+Estoy armando una guía de Colombia y quería ver si <span class="var">[Business name]</span> estaría interesado en aparecer.
+
+¿Es este un buen número para hablar?</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('w1',this)">Copy (ES)</button>
+        </div>
+        <div class="msg-box" id="w1en" style="margin-top:10px">Hey <span class="var">[Name]</span> 👋 Alex here — travel content creator.
+
+Building a Colombia guide and wanted to see if <span class="var">[Business name]</span> would be interested in being featured.
+
+Is this a good number to reach you?</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('w1en',this)">Copy (EN)</button>
+        </div>
+        <div class="tactic">
+          <em>Ask if it's the right number.</em> This does two things: it feels respectful (not a blast), and it filters out wrong numbers fast. <strong>Send in Spanish by default for Colombian businesses.</strong> Only switch to English if they reply in English. No link, no price, no pitch — just a door knock.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WA 2 -->
+  <div class="tp-block">
+    <div class="tp-card wa">
+      <div class="tp-head">
+        <div class="tp-num">05</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-wa">WhatsApp</span>
+          <span class="tp-name">Soft Nudge</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 20</span>
+          <strong>Only if message was seen</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="msg-box" id="w2">Hola de nuevo <span class="var">[Name]</span> — solo quería asegurarme de que viste mi mensaje anterior.
+
+La guía se lanza pronto, aún hay espacio para <span class="var">[Business name]</span> en la categoría de <span class="var">[categoría]</span>.
+
+Aquí más info si te interesa: <span class="var">[link]</span></div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('w2',this)">Copy (ES)</button>
+        </div>
+        <div class="tactic">
+          <strong>Only send this if the first message shows two blue ticks (read).</strong> If it's still unread, do not follow up on WhatsApp — move to Instagram instead. This is the only WA message where you include a link, and only because they've already seen your name. <em>After this, if no response, stop WhatsApp entirely.</em> Do not send a third WA message under any circumstances.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+
+  <!-- ══════════════════════════ INSTAGRAM ══════════════════════════ -->
+  <div class="section-title">Phase 03 · Instagram</div>
+
+  <div class="channel-intro ig">
+    <div class="ci-icon">📲</div>
+    <div class="ci-body">
+      <div class="ci-title ig">Instagram strategy — warmest channel</div>
+      <div class="ci-desc ig">Instagram is the <em>most natural channel</em> for this kind of outreach — businesses expect creator contact here. The strategy is engage first (like, comment genuinely), then DM. Never DM cold without having touched their content first. The tone is contemporary, casual, peer-to-peer. You're not a brand reaching out — you're a creator who actually liked what they saw.</div>
+    </div>
+  </div>
+
+  <!-- IG 1: PRE-ENGAGEMENT -->
+  <div class="tp-block">
+    <div class="tp-card ig">
+      <div class="tp-head">
+        <div class="tp-num">06</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-ig">Instagram</span>
+          <span class="tp-name">Pre-Engagement</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 7–10</span>
+          <strong>Before the DM</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="msg-box" id="ig0">[ Like 2–3 of their recent posts — not all at once. Space it over 2–3 days. ]
+
+[ Leave one genuine comment on a post that's relevant — something specific, not just "great place!" ]
+
+Example comments:
+→ "This view is incredible, which floor is this?"
+→ "The light in this shot is unreal 🔥"
+→ "Been wanting to try this — is this the Laureles location?"</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('ig0',this)">Copy note</button>
+        </div>
+        <div class="tactic">
+          <em>This is not optional.</em> Businesses that get a DM from an account that has never touched their content treat it as spam. One genuine comment changes the context of everything that comes after — you're now a person who noticed them, not a robot doing outreach.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IG 2: DM -->
+  <div class="tp-block">
+    <div class="tp-card ig">
+      <div class="tp-head">
+        <div class="tp-num">07</div>
+        <div class="tp-meta">
+          <span class="tp-channel-tag ch-ig">Instagram DM</span>
+          <span class="tp-name">The DM</span>
+        </div>
+        <div class="tp-timing">
+          <span class="tov-day">Day 14+</span>
+          <strong>Contemporary · Short</strong>
+        </div>
+      </div>
+      <div class="tp-body">
+        <div class="msg-box" id="ig1">Hey! Just wanted to say <span class="var">[Business name]</span> looks genuinely great — the kind of spot that belongs in a guide.
+
+I'm Alex, travel content creator — building a curated Colombia guide for my community. Short version: travelers DM me for recommendations, I send them a curated map.
+
+Would love to include you. There's a free spot and some featured options too. Worth a chat?</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('ig1',this)">Copy</button>
+        </div>
+        <div class="msg-box" id="ig1es" style="margin-top:10px">¡Hola! Quería decir que <span class="var">[Business name]</span> se ve increíble — exactamente el tipo de lugar que necesita una guía seria.
+
+Soy Alex, creador de contenido de viajes. Estoy armando una guía curada de Colombia para mi comunidad. La versión corta: los viajeros me escriben pidiendo recomendaciones y yo les mando un mapa.
+
+Me encantaría incluirlos. Hay un espacio gratuito y también opciones destacadas. ¿Hablamos?</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="cp('ig1es',this)">Copy (ES)</button>
+        </div>
+        <div class="tactic">
+          <strong>The IG DM works differently from email.</strong> It's shorter, warmer, more like a conversation starter than a pitch. <em>Don't mention price in the first DM.</em> Wait for "tell me more" — then send the tier card or the pitch deck link. If they follow back or react to your stories after this, that's a warm signal. Reply fast.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTION TRACKER -->
+  <div class="notion-box">
+    <div class="notion-title">Notion CRM · Suggested fields per business</div>
+    <div class="notion-cols">
+      <div class="nc">
+        <div class="nc-label">Business</div>
+        <div class="nc-val">Name, category, country, IG handle, email, WhatsApp</div>
+      </div>
+      <div class="nc">
+        <div class="nc-label">Outreach status</div>
+        <div class="nc-val"><em>To contact / Email sent / Replied / WA sent / IG engaged / Closed</em></div>
+      </div>
+      <div class="nc">
+        <div class="nc-label">Last touch</div>
+        <div class="nc-val">Date + which touchpoint (E1, E2, E3, W1, W2, IG-engage, IG-DM)</div>
+      </div>
+      <div class="nc">
+        <div class="nc-label">Tier</div>
+        <div class="nc-val"><em>Listed $50 / Featured $200 / Partner $500</em> · Paid Y/N</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function cp(id, btn) {
+  const el = document.getElementById(id);
+  const txt = el.innerText;
+  navigator.clipboard.writeText(txt).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = btn.textContent.includes('ES') ? 'Copy (ES)' : btn.textContent.includes('EN') ? 'Copy (EN)' : 'Copy'; btn.classList.remove('done'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

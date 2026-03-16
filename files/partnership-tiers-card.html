@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partnership Tiers · alexspexx</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --gold: #C89B3C;
+  --gold-dim: rgba(200,155,60,0.5);
+  --white: #fff;
+  --off: rgba(255,255,255,0.58);
+  --dim: rgba(255,255,255,0.28);
+  --bg: #0d0b08;
+  --border: rgba(255,255,255,0.07);
+}
+body {
+  background: #050505;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px; gap: 20px;
+  font-family: 'Space Mono', monospace;
+}
+.page-label {
+  font-size: 8px; letter-spacing: 0.4em;
+  color: rgba(255,255,255,0.12); text-transform: uppercase;
+}
+
+/* ── CARD ── */
+.card {
+  width: 393px;
+  background: var(--bg);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.card::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px; opacity: 0.04; mix-blend-mode: overlay;
+}
+
+/* HEADER */
+.header {
+  position: relative; z-index: 10;
+  padding: 20px 24px 14px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+.series-tag { font-size: 8px; letter-spacing: 0.2em; color: var(--gold-dim); text-transform: uppercase; display: block; }
+.handle { font-size: 13px; letter-spacing: 0.08em; color: var(--gold); display: block; margin-top: 3px; }
+.country-badge {
+  font-family: 'Anton', sans-serif; font-size: 11px; letter-spacing: 1px;
+  color: #0d0b08; background: var(--gold);
+  padding: 4px 10px; border-radius: 2px; align-self: center;
+}
+
+/* HERO */
+.hero {
+  position: relative; z-index: 10;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.hero-eyebrow { font-size: 8px; letter-spacing: 0.22em; color: var(--gold-dim); text-transform: uppercase; display: block; margin-bottom: 6px; }
+.hero-title {
+  font-family: 'Anton', sans-serif;
+  font-size: 44px; line-height: 0.88; letter-spacing: 1px; color: #fff; display: block; margin-bottom: 10px;
+}
+.hero-title .out { -webkit-text-stroke: 1.5px rgba(255,255,255,0.2); color: transparent; }
+.hero-sub {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px; font-style: italic; line-height: 1.5; color: var(--off);
+}
+.hero-sub em { color: var(--gold); font-style: normal; }
+
+/* PROOF BAR */
+.proof-bar {
+  position: relative; z-index: 10;
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.proof-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 9px 6px;
+  border-right: 1px solid var(--border);
+}
+.proof-item:last-child { border-right: none; }
+.proof-n { font-family: 'Anton', sans-serif; font-size: 20px; color: var(--gold); line-height: 1; }
+.proof-l { font-size: 6.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-top: 2px; text-align: center; }
+
+/* TIERS */
+.tiers { position: relative; z-index: 10; }
+
+.tier {
+  border-bottom: 1px solid var(--border);
+  padding: 15px 24px; position: relative;
+}
+.tier.top {
+  background: rgba(200,155,60,0.035);
+  border-left: 2px solid var(--gold);
+}
+.tier-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 9px; }
+.tier-badge { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dim); display: block; margin-bottom: 3px; }
+.tier.top .tier-badge { color: var(--gold-dim); }
+.tier-name { font-family: 'Anton', sans-serif; font-size: 18px; letter-spacing: 0.5px; color: var(--white); line-height: 1; }
+.tier.top .tier-name { color: var(--gold); }
+.tier-price { font-family: 'Anton', sans-serif; font-size: 24px; color: var(--white); line-height: 1; display: block; text-align: right; }
+.tier.top .tier-price { color: var(--gold); }
+.tier-note { font-size: 6.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); display: block; margin-top: 1px; text-align: right; }
+.perks { display: flex; flex-direction: column; gap: 4px; }
+.perk { display: flex; align-items: flex-start; gap: 7px; }
+.pd { width: 3px; height: 3px; border-radius: 50%; background: var(--dim); flex-shrink: 0; margin-top: 5px; }
+.tier.top .pd { background: var(--gold); }
+.pt { font-size: 8.5px; letter-spacing: 0.03em; color: var(--off); line-height: 1.45; }
+.pt strong { color: var(--white); }
+.tier.top .pt strong { color: var(--gold); }
+.best-pill {
+  position: absolute; top: 15px; right: 24px;
+  font-size: 6px; letter-spacing: 0.15em; text-transform: uppercase;
+  background: var(--gold); color: #0d0b08;
+  padding: 3px 7px; border-radius: 2px; font-weight: 700;
+}
+
+/* FOOTER */
+.footer {
+  position: relative; z-index: 10;
+  padding: 13px 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border);
+}
+.footer-note { font-size: 7.5px; letter-spacing: 0.06em; color: var(--dim); }
+.footer-note em { color: rgba(200,155,60,0.45); font-style: normal; }
+.footer-cta {
+  font-size: 7.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--gold); border: 1px solid rgba(200,155,60,0.3);
+  padding: 5px 10px; border-radius: 2px; cursor: pointer;
+}
+
+/* COUNTRY SELECTOR */
+.selector-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.sel-btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 7.5px; letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 5px 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; color: rgba(255,255,255,0.25);
+  cursor: pointer; border-radius: 2px; transition: all 0.2s;
+}
+.sel-btn.active {
+  background: rgba(200,155,60,0.1);
+  border-color: rgba(200,155,60,0.35); color: var(--gold);
+}
+</style>
+</head>
+<body>
+
+<p class="page-label">@alexspexx · Partnership Tiers · Story Format</p>
+<div class="selector-row">
+  <button class="sel-btn active" onclick="setCountry('Colombia','🇨🇴',this)">Colombia</button>
+  <button class="sel-btn" onclick="setCountry('Brazil','🇧🇷',this)">Brazil</button>
+  <button class="sel-btn" onclick="setCountry('Japan','🇯🇵',this)">Japan</button>
+  <button class="sel-btn" onclick="setCountry('Oman','🇴🇲',this)">Oman</button>
+</div>
+
+<div class="card">
+
+  <div class="header">
+    <div>
+      <span class="series-tag">Insider Guide · Partnership</span>
+      <span class="handle">@alexspexx</span>
+    </div>
+    <span class="country-badge" id="country-badge">COLOMBIA</span>
+  </div>
+
+  <div class="hero">
+    <span class="hero-eyebrow">Featured placement · Country Guide</span>
+    <span class="hero-title">GET<br><span class="out">FEAT</span>URED</span>
+    <p class="hero-sub">A guide built by someone who's <em>actually been there</em>, creating content, building community. Not a tourist.</p>
+  </div>
+
+  <div class="proof-bar">
+    <div class="proof-item">
+      <span class="proof-n">100</span>
+      <span class="proof-l">Countries<br>challenge</span>
+    </div>
+    <div class="proof-item">
+      <span class="proof-n">↑</span>
+      <span class="proof-l">Growing<br>community</span>
+    </div>
+    <div class="proof-item">
+      <span class="proof-n">5+</span>
+      <span class="proof-l">Channels of<br>distribution</span>
+    </div>
+    <div class="proof-item">
+      <span class="proof-n">∞</span>
+      <span class="proof-l">Guide stays<br>live forever</span>
+    </div>
+  </div>
+
+  <div class="tiers">
+
+    <!-- T1 -->
+    <div class="tier">
+      <div class="tier-top-row">
+        <div>
+          <span class="tier-badge">Tier 01</span>
+          <span class="tier-name">LISTED</span>
+        </div>
+        <div>
+          <span class="tier-price">$50</span>
+          <span class="tier-note">one-time</span>
+        </div>
+      </div>
+      <div class="perks">
+        <div class="perk"><span class="pd"></span><span class="pt">Name + Google Maps link in the directory</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt">Shared with every traveler who requests the guide</span></div>
+      </div>
+    </div>
+
+    <!-- T2 -->
+    <div class="tier">
+      <div class="tier-top-row">
+        <div>
+          <span class="tier-badge">Tier 02</span>
+          <span class="tier-name">FEATURED</span>
+        </div>
+        <div>
+          <span class="tier-price">$200</span>
+          <span class="tier-note">per guide</span>
+        </div>
+      </div>
+      <div class="perks">
+        <div class="perk"><span class="pd"></span><span class="pt"><strong>Pinned to top</strong> of your category</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt"><strong>Written profile</strong> in Alex's voice</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt">"Recommended by Alex" badge + photo</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt">Newsletter mention at launch</span></div>
+      </div>
+    </div>
+
+    <!-- T3 -->
+    <div class="tier top">
+      <span class="best-pill">Best Value</span>
+      <div class="tier-top-row">
+        <div>
+          <span class="tier-badge">Tier 03</span>
+          <span class="tier-name">PARTNER</span>
+        </div>
+        <div>
+          <span class="tier-price">$500</span>
+          <span class="tier-note">guide + content</span>
+        </div>
+      </div>
+      <div class="perks">
+        <div class="perk"><span class="pd"></span><span class="pt"><strong>Everything in Featured</strong></span></div>
+        <div class="perk"><span class="pd"></span><span class="pt"><strong>Dedicated callout card</strong> in the guide</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt"><strong>Instagram story feature</strong> on reel launch</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt">Logo + mention in newsletter header</span></div>
+        <div class="perk"><span class="pd"></span><span class="pt">Renewal option as guide updates</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="footer-note"><em>*</em> Limited spots per category · honest placement</span>
+    <span class="footer-cta">Get in touch ↗</span>
+  </div>
+
+</div>
+
+<script>
+function setCountry(name, flag, btn) {
+  document.getElementById('country-badge').textContent = name.toUpperCase();
+  document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

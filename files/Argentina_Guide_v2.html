@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Argentina Travel Guide by @Alexspexx</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ink:#1a1a1a;--cream:#f5f0e8;--accent:#c4553a;--gold:#c9a84c;--slate:#6b7280;--light:#faf8f4}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;background:linear-gradient(165deg,#1a1a1a 0%,#2d2520 40%,#3d2e25 70%,#4a352a 100%)}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.hero-content{position:relative;z-index:2;padding:2rem}
+.hero-tag{font-size:.75rem;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;font-weight:500;opacity:0;animation:fadeUp .8s ease forwards .3s}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(3.5rem,10vw,8rem);font-weight:900;color:#fff;line-height:.95;opacity:0;animation:fadeUp .8s ease forwards .5s}
+.hero h1 span{display:block;font-style:italic;font-weight:400;color:var(--gold);font-size:.45em;margin-top:.3em}
+.hero-stats{display:flex;gap:2.5rem;margin-top:2.5rem;justify-content:center;opacity:0;animation:fadeUp .8s ease forwards .8s}
+.hero-stat{text-align:center;color:rgba(255,255,255,.7)}
+.hero-stat strong{display:block;font-family:'Playfair Display';font-size:2rem;color:#fff}
+.hero-stat small{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase}
+.scroll-hint{position:absolute;bottom:5rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.3);font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-8px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* CITY NAV */
+.city-nav{position:sticky;top:0;z-index:100;background:rgba(26,26,26,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:.6rem 1rem}
+.city-nav-inner{max-width:960px;margin:0 auto;display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.city-nav-inner::-webkit-scrollbar{display:none}
+.city-btn{border:none;background:transparent;padding:.45rem .9rem;border-radius:100px;font-family:'DM Sans';font-size:.72rem;font-weight:500;color:rgba(255,255,255,.5);cursor:pointer;white-space:nowrap;transition:all .25s;letter-spacing:.01em}
+.city-btn:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.06)}
+.city-btn.active{background:var(--gold);color:#1a1a1a;font-weight:600}
+.city-btn .cnt{font-size:.6rem;opacity:.6;margin-left:3px}
+
+/* CAT PILLS */
+.cat-nav{max-width:960px;margin:0 auto;padding:1rem 1rem .3rem;display:flex;gap:.4rem;flex-wrap:wrap}
+.cat-pill{border:1px solid rgba(0,0,0,.08);background:var(--light);padding:.4rem .85rem;border-radius:100px;font-family:'DM Sans';font-size:.72rem;font-weight:500;color:var(--slate);cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:.3rem}
+.cat-pill:hover{border-color:rgba(0,0,0,.15)}
+.cat-pill.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.cat-pill .cnt{font-size:.6rem;opacity:.5}
+
+/* SEARCH */
+.search-wrap{max-width:960px;margin:0 auto;padding:.8rem 1rem;position:relative}
+.search-box{width:100%;padding:.75rem 1rem .75rem 2.6rem;border:1px solid rgba(0,0,0,.08);border-radius:12px;font-family:'DM Sans';font-size:.85rem;background:var(--light);outline:none;transition:all .25s}
+.search-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,85,58,.08)}
+.search-icon{position:absolute;left:1.8rem;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--slate);opacity:.35}
+
+/* CONTENT */
+.guide-body{max-width:960px;margin:0 auto;padding:.5rem 1rem 2rem}
+
+/* CITY SECTION */
+.city-section{margin-bottom:2.5rem}
+.city-header{display:flex;align-items:baseline;gap:.8rem;margin-bottom:.3rem;padding-top:.8rem}
+.city-name{font-family:'Playfair Display';font-size:1.5rem;font-weight:700}
+.city-count{font-size:.7rem;color:var(--slate);letter-spacing:.08em}
+
+/* CAT GROUP IN CITY */
+.cat-group{margin-bottom:1.2rem}
+.cat-group-header{display:flex;align-items:center;gap:.5rem;padding:.5rem 0 .3rem;font-size:.78rem;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.08em}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-eat .cat-dot{background:#c4553a}
+.cat-cafe .cat-dot{background:#2d6a4f}
+.cat-drink .cat-dot{background:#7c3aed}
+.cat-see .cat-dot{background:#c9a84c}
+.cat-stay .cat-dot{background:#3b82f6}
+
+/* PLACE CARDS */
+.places-list{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.place-card{display:flex;align-items:center;justify-content:space-between;background:var(--light);border:1px solid rgba(0,0,0,.04);border-radius:10px;padding:.65rem .9rem;transition:all .2s;cursor:pointer;text-decoration:none;color:inherit;gap:.5rem}
+.place-card:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,.06);border-color:rgba(0,0,0,.08)}
+.place-name{font-weight:500;font-size:.82rem;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.place-arrow{color:var(--slate);opacity:.2;transition:all .2s;font-size:.75rem;flex-shrink:0}
+.place-card:hover .place-arrow{opacity:.6;transform:translateX(2px)}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--slate);font-size:.88rem}
+
+.guide-footer{text-align:center;padding:3.5rem 1rem 2rem;border-top:1px solid rgba(0,0,0,.06)}
+.guide-footer .brand{font-family:'Playfair Display';font-size:1.2rem;font-weight:700;margin-bottom:.4rem}
+.guide-footer p{color:var(--slate);font-size:.78rem;line-height:1.8}
+
+@media(max-width:640px){
+.places-list{grid-template-columns:1fr}
+.hero h1{font-size:3.2rem}
+.hero-stats{gap:1.2rem}
+}
+@media print{.city-nav,.cat-nav,.search-wrap,.scroll-hint{display:none}.hero{min-height:auto;padding:3rem 2rem;page-break-after:always}.place-card{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<div class="hero-content">
+<div class="hero-tag">A Curated Travel Guide</div>
+<h1>Argentina<span>by @Alexspexx</span></h1>
+<div class="hero-stats">
+<div class="hero-stat"><strong id="totalCount">186</strong><small>Places</small></div>
+<div class="hero-stat"><strong>10</strong><small>Cities</small></div>
+<div class="hero-stat"><strong>5</strong><small>Categories</small></div>
+</div>
+</div>
+<div class="scroll-hint">↓ Scroll to explore</div>
+</section>
+
+<nav class="city-nav"><div class="city-nav-inner" id="cityNav"></div></nav>
+<div class="cat-nav" id="catNav"></div>
+<div class="search-wrap">
+<svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+<input class="search-box" type="text" placeholder="Search 186 places..." id="searchBox">
+</div>
+
+<main class="guide-body" id="guideBody"></main>
+
+<footer class="guide-footer">
+<div class="brand">@Alexspexx</div>
+<p>Curated with love from my travels across Argentina.<br>Follow on Instagram for more free travel guides worldwide.<br><em style="font-size:.68rem;opacity:.5">All links open in Google Maps · Tap any place to navigate</em></p>
+</footer>
+
+<script>
+const DATA = [{"t": "Socialtel Bariloche", "u": "https://www.google.com/maps/place/Socialtel+Bariloche/data=!4m2!3m1!1s0x961a7b364253e8d1:0x6fa294b39dcb666", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Cabañas \"Los Elementos\". San Carlos, Salta, Argentina.", "u": "https://www.google.com/maps/place/Caba%C3%B1as+%22Los+Elementos%22.+San+Carlos,+Salta,+Argentina./data=!4m2!3m1!1s0x941f2c203fb6b365:0xb1679553fda0ddaa", "c": "stay", "y": "Cafayate"}, {"t": "Patios de Cafayate", "u": "https://www.google.com/maps/place/Patios+de+Cafayate/data=!4m2!3m1!1s0x941f3173f46ee87b:0x8a50622160a88ba3", "c": "see", "y": "Cafayate"}, {"t": "Pristine Salinas Grandes Luxury Camp", "u": "https://www.google.com/maps/place/Pristine+Salinas+Grandes+Luxury+Camp/data=!4m2!3m1!1s0x9403552aefc75901:0xe423cf101348e032", "c": "stay", "y": "Jujuy & Quebrada"}, {"t": "Colores de Purmamarca", "u": "https://www.google.com/maps/place/Colores+de+Purmamarca/data=!4m2!3m1!1s0x941b49b5d9ae0507:0xacbce593aa702daf", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "El Boliche de Alberto", "u": "https://www.google.com/maps/place/El+Boliche+de+Alberto/data=!4m2!3m1!1s0x961a7b6d9cf00059:0x8cd6795ead879c81", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "The Argentine Experience", "u": "https://www.google.com/maps/place/The+Argentine+Experience/data=!4m2!3m1!1s0x94f6923093b2dc2d:0xec073429c11780aa", "c": "eat", "y": "Iguazú & Northeast"}, {"t": "Feria Puerto Iguazu", "u": "https://www.google.com/maps/place/Feria+Puerto+Iguazu/data=!4m2!3m1!1s0x94f692302de1690b:0x14474d3df45d3fe9", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Cerveza Patagonia - Refugio Iguazú", "u": "https://www.google.com/maps/place/Cerveza+Patagonia+-+Refugio+Iguaz%C3%BA/data=!4m2!3m1!1s0x94f6938c51ef78c9:0x53adb39ddab971e", "c": "drink", "y": "Iguazú & Northeast"}, {"t": "Hito Tres Fronteras (Argentina)", "u": "https://www.google.com/maps/place/Hito+Tres+Fronteras+(Argentina)/data=!4m2!3m1!1s0x94f692191bebd215:0x8f7c3e3038c8baee", "c": "see", "y": "Iguazú & Northeast"}, {"t": "El Secreto de Oro", "u": "https://www.google.com/maps/place/El+Secreto+de+Oro/data=!4m2!3m1!1s0x95bcb59b4838ed2b:0x6542dc54a4366144", "c": "eat", "y": "Buenos Aires"}, {"t": "Gran Parrilla lo de Jaime", "u": "https://www.google.com/maps/place/Gran+Parrilla+lo+de+Jaime/data=!4m2!3m1!1s0x95bccba070dc61ff:0xd502e877901827", "c": "eat", "y": "Buenos Aires"}, {"t": "El Preferido de Palermo", "u": "https://www.google.com/maps/place/El+Preferido+de+Palermo/data=!4m2!3m1!1s0x95bcb58684ecac45:0x8572b89bfa6d3373", "c": "eat", "y": "Buenos Aires"}, {"t": "Paseo de La Infanta", "u": "https://www.google.com/maps/place/Paseo+de+La+Infanta/data=!4m2!3m1!1s0x95bcb59f41a51899:0xe9d4e6fc7f4f5df7", "c": "see", "y": "Buenos Aires"}, {"t": "Niño Gordo", "u": "https://www.google.com/maps/place/Ni%C3%B1o+Gordo/data=!4m2!3m1!1s0x95bcb588a9281861:0xa8576c7fafbb8998", "c": "eat", "y": "Buenos Aires"}, {"t": "Gontran Cherrier", "u": "https://www.google.com/maps/place/Gontran+Cherrier/data=!4m2!3m1!1s0x95bcb5c9dab6b5a5:0x5416dca2f818d497", "c": "eat", "y": "Buenos Aires"}, {"t": "Chori", "u": "https://www.google.com/maps/place/Chori/data=!4m2!3m1!1s0x95bcb588c22f7999:0x910a40368a2b8c66", "c": "eat", "y": "Buenos Aires"}, {"t": "Parrilla SecreTiTo", "u": "https://www.google.com/maps/place/Parrilla+SecreTiTo/data=!4m2!3m1!1s0x95bcb5965cce09c9:0x9c666779247cb4e0", "c": "eat", "y": "Buenos Aires"}, {"t": "argenper", "u": "https://www.google.com/maps/place/argenper/data=!4m2!3m1!1s0x95bcb5da0422baa5:0x4411a3adf23ac889", "c": "eat", "y": "Buenos Aires"}, {"t": "La Hormiga", "u": "https://www.google.com/maps/place/La+Hormiga/data=!4m2!3m1!1s0x95bcb587ea19f109:0xc3a4e23b2977dea6", "c": "eat", "y": "Buenos Aires"}, {"t": "The Hole Bar - Alcatraz Speakeasy Hidden Bar", "u": "https://www.google.com/maps/place/The+Hole+Bar+-+Alcatraz+Speakeasy+Hidden+Bar/data=!4m2!3m1!1s0x95bcb5ebd0329d79:0x274ce16c4c2bc1e9", "c": "drink", "y": "Buenos Aires"}, {"t": "Temple Craft Soho", "u": "https://www.google.com/maps/place/Temple+Craft+Soho/data=!4m2!3m1!1s0x95bcb5864ae53df9:0x508b1b12186da6e7", "c": "drink", "y": "Buenos Aires"}, {"t": "El Bodegón del Anti", "u": "https://www.google.com/maps/place/El+Bodeg%C3%B3n+del+Anti/data=!4m2!3m1!1s0x95bcb593f446af23:0xdd9ccc630e00c6e1", "c": "eat", "y": "Buenos Aires"}, {"t": "El Perón Perón", "u": "https://www.google.com/maps/place/El+Per%C3%B3n+Per%C3%B3n/data=!4m2!3m1!1s0x95bcb5914341b517:0x19c75660aa802caf", "c": "drink", "y": "Buenos Aires"}, {"t": "Siamo nel Forno", "u": "https://www.google.com/maps/place/Siamo+nel+Forno/data=!4m2!3m1!1s0x95bcb59308ebd8d9:0x7cbf137bd0f2cbd3", "c": "eat", "y": "Buenos Aires"}, {"t": "Multiplex Monumental Lavalle", "u": "https://www.google.com/maps/place/Multiplex+Monumental+Lavalle/data=!4m2!3m1!1s0x95bccacea3fa76e9:0xa79f7f11f32bcafd", "c": "eat", "y": "Buenos Aires"}, {"t": "Nápoles", "u": "https://www.google.com/maps/place/N%C3%A1poles/data=!4m2!3m1!1s0x95bccb32d2ba0b75:0x96c0cd37cfe3b575", "c": "eat", "y": "Buenos Aires"}, {"t": "Siga La Vaca", "u": "https://www.google.com/maps/place/Siga+La+Vaca/data=!4m2!3m1!1s0x95a334d6ab8083d3:0x2cac9651b36b5f22", "c": "eat", "y": "Buenos Aires"}, {"t": "Chacarita Cemetery", "u": "https://www.google.com/maps/place/Chacarita+Cemetery/data=!4m2!3m1!1s0x95bcb5fcdd2212d3:0x80159bd2c0e7d6c8", "c": "see", "y": "Buenos Aires"}, {"t": "Casa Natal de Diego Armando Maradona", "u": "https://www.google.com/maps/place/Casa+Natal+de+Diego+Armando+Maradona/data=!4m2!3m1!1s0x95bccddb5b3a5ca3:0x262a647449c1078c", "c": "see", "y": "Buenos Aires"}, {"t": "Uptown", "u": "https://www.google.com/maps/place/Uptown/data=!4m2!3m1!1s0x95bcb5947d293161:0x5d3b1b2d879b65c4", "c": "eat", "y": "Buenos Aires"}, {"t": "Chacaito Caribbean Food Station", "u": "https://www.google.com/maps/place/Chacaito+Caribbean+Food+Station/data=!4m2!3m1!1s0x95bcb5f4692b9add:0x26b675d2033ad1c3", "c": "eat", "y": "Buenos Aires"}, {"t": "Cronico Bar", "u": "https://www.google.com/maps/place/Cronico+Bar/data=!4m2!3m1!1s0x95bcb5888e6003cd:0x3c10ebd6f12ebdcb", "c": "drink", "y": "Buenos Aires"}, {"t": "Casa regalo de Maradona a sus padres", "u": "https://www.google.com/maps/place/Casa+regalo+de+Maradona+a+sus+padres/data=!4m2!3m1!1s0x95bcb71b3aef411f:0xd179b8bc54f083f7", "c": "see", "y": "Buenos Aires"}, {"t": "KBBQ Parrilla Coreana Hollywood", "u": "https://www.google.com/maps/place/KBBQ+Parrilla+Coreana+Hollywood/data=!4m2!3m1!1s0x95bcb51c404deb6f:0xf1906409ade707f7", "c": "eat", "y": "Buenos Aires"}, {"t": "Cinépolis Recoleta", "u": "https://www.google.com/maps/place/Cin%C3%A9polis+Recoleta/data=!4m2!3m1!1s0x95bccaa28fffbeeb:0x1db9af96c3aab6b0", "c": "eat", "y": "Buenos Aires"}, {"t": "Kajue Café", "u": "https://www.google.com/maps/place/Kajue+Caf%C3%A9/data=!4m2!3m1!1s0x95bcb57cb2bff3ff:0x277138b0ef61acab", "c": "cafe", "y": "Buenos Aires"}, {"t": "Güerrín", "u": "https://www.google.com/maps/place/G%C3%BCerr%C3%ADn/data=!4m2!3m1!1s0x95bccac42dabce9b:0xbaa2d156dbe4138d", "c": "eat", "y": "Buenos Aires"}, {"t": "Cantina Patio La Boca", "u": "https://www.google.com/maps/place/Cantina+Patio+La+Boca/data=!4m2!3m1!1s0x95a335263748cfd9:0xb067366ccb44f828", "c": "eat", "y": "Buenos Aires"}, {"t": "PEÑA LA VIEJA ESTACION", "u": "https://www.google.com/maps/place/PE%C3%91A+LA+VIEJA+ESTACION/data=!4m2!3m1!1s0x941bc3b8a77392bf:0xf55bf9340c98a2c4", "c": "eat", "y": "Salta"}, {"t": "Adobe Cocina Regional", "u": "https://www.google.com/maps/place/Adobe+Cocina+Regional/data=!4m2!3m1!1s0x941bc390de32d9e1:0xe71885205ff6e4ac", "c": "eat", "y": "Salta"}, {"t": "J.W. Bradley", "u": "https://www.google.com/maps/place/J.W.+Bradley/data=!4m2!3m1!1s0x95bcb58eda437b81:0xf5745b3553798184", "c": "drink", "y": "Buenos Aires"}, {"t": "LA COYA EMPANADAS", "u": "https://www.google.com/maps/place/LA+COYA+EMPANADAS/data=!4m2!3m1!1s0x941bc3b807d513af:0xec20f5d33592dfa8", "c": "eat", "y": "Salta"}, {"t": "Casa Finca", "u": "https://www.google.com/maps/place/Casa+Finca/data=!4m2!3m1!1s0x941b0f9b0219d661:0xc39a23f2d04d09f3", "c": "stay", "y": "Jujuy & Quebrada"}, {"t": "Doña Salta", "u": "https://www.google.com/maps/place/Do%C3%B1a+Salta/data=!4m2!3m1!1s0x941bc3a311a35f1d:0xb06850558f7c4f4a", "c": "eat", "y": "Salta"}, {"t": "Basílica Menor y Convento de San Francisco en Salta", "u": "https://www.google.com/maps/place/Bas%C3%ADlica+Menor+y+Convento+de+San+Francisco+en+Salta/data=!4m2!3m1!1s0x941bc3a324d4eea5:0xe937e1831038d499", "c": "see", "y": "Salta"}, {"t": "El Charrúa Restaurante y Parrillada", "u": "https://www.google.com/maps/place/El+Charr%C3%BAa+Restaurante+y+Parrillada/data=!4m2!3m1!1s0x941bc3a2bf761111:0xb3753ce4c14c9c1f", "c": "eat", "y": "Salta"}, {"t": "Mármol Siglo 17", "u": "https://www.google.com/maps/place/M%C3%A1rmol+Siglo+17/data=!4m2!3m1!1s0x9432a30006ddb80b:0xaad341a8ea47ff2c", "c": "eat", "y": "Córdoba"}, {"t": "Grabeat", "u": "https://www.google.com/maps/place/Grabeat/data=!4m2!3m1!1s0x9432a28f04b73ffd:0x4ccba44141a5cc", "c": "eat", "y": "Córdoba"}, {"t": "Mostachys", "u": "https://www.google.com/maps/place/Mostachys/data=!4m2!3m1!1s0x9432a29aa80c32f5:0x3579248affd14ddf", "c": "eat", "y": "Córdoba"}, {"t": "Pizza Risata Nueva Córdoba", "u": "https://www.google.com/maps/place/Pizza+Risata+Nueva+C%C3%B3rdoba/data=!4m2!3m1!1s0x9432a307266900ef:0x94ce853f07eba83e", "c": "eat", "y": "Córdoba"}, {"t": "LA TERMINAL – Ruin Bar", "u": "https://www.google.com/maps/place/LA+TERMINAL+%E2%80%93+Ruin+Bar/data=!4m2!3m1!1s0x9432a3c80ee800bf:0x9c73ec160f72861e", "c": "drink", "y": "Córdoba"}, {"t": "Chilli Street Club", "u": "https://www.google.com/maps/place/Chilli+Street+Club/data=!4m2!3m1!1s0x9432a2888834fff9:0xe2bd9b80a2518185", "c": "drink", "y": "Córdoba"}, {"t": "El Papagayo Restaurant", "u": "https://www.google.com/maps/place/El+Papagayo+Restaurant/data=!4m2!3m1!1s0x9432a2802bb715c1:0x33bf20cfde624bbc", "c": "eat", "y": "Córdoba"}, {"t": "Fresa", "u": "https://www.google.com/maps/place/Fresa/data=!4m2!3m1!1s0x9432a31d79deaf6b:0x79319c25add9c850", "c": "eat", "y": "Córdoba"}, {"t": "FULANO Café de Vereda", "u": "https://www.google.com/maps/place/FULANO+Caf%C3%A9+de+Vereda/data=!4m2!3m1!1s0x9432a38b91094d29:0xc3e3441c8606337", "c": "cafe", "y": "Córdoba"}, {"t": "Independencia 180 • Café de especialidad", "u": "https://www.google.com/maps/place/Independencia+180+%E2%80%A2+Caf%C3%A9+de+especialidad/data=!4m2!3m1!1s0x9432a3a9895ccec7:0xdce9462171fd9e49", "c": "cafe", "y": "Córdoba"}, {"t": "Tres Calaveras", "u": "https://www.google.com/maps/place/Tres+Calaveras/data=!4m2!3m1!1s0x9432a28c8ab65d91:0x5a3c43b92b400934", "c": "drink", "y": "Córdoba"}, {"t": "Burger King", "u": "https://www.google.com/maps/place/Burger+King/data=!4m2!3m1!1s0x9432a28286c29acd:0x93338741c7ad556", "c": "eat", "y": "Córdoba"}, {"t": "Brunchería - Café de especialiad", "u": "https://www.google.com/maps/place/Bruncher%C3%ADa+-+Caf%C3%A9+de+especialiad/data=!4m2!3m1!1s0x9432a28628e096af:0x34d91e2060b09420", "c": "cafe", "y": "Córdoba"}, {"t": "DOCBA Cafe & Cowork", "u": "https://www.google.com/maps/place/DOCBA+Cafe+%26+Cowork/data=!4m2!3m1!1s0x9432a3ee1f8e0fdd:0x69b36cece73134bc", "c": "cafe", "y": "Córdoba"}, {"t": "Nakama Ramen Corner", "u": "https://www.google.com/maps/place/Nakama+Ramen+Corner/data=!4m2!3m1!1s0x9432a31db0401d21:0x89614cf7abf4c408", "c": "eat", "y": "Córdoba"}, {"t": "Punch Curry Bar", "u": "https://www.google.com/maps/place/Punch+Curry+Bar/data=!4m2!3m1!1s0x95bcb5729a73a937:0xd9a85c56bcc296a4", "c": "drink", "y": "Buenos Aires"}, {"t": "Vaffanculo Cantina Italiana", "u": "https://www.google.com/maps/place/Vaffanculo+Cantina+Italiana/data=!4m2!3m1!1s0x95bcb597c47d6729:0xd088be9d7ed75a95", "c": "eat", "y": "Buenos Aires"}, {"t": "Kika", "u": "https://www.google.com/maps/place/Kika/data=!4m2!3m1!1s0x95bcb58eb93ceb73:0x78b05392e97561ab", "c": "eat", "y": "Buenos Aires"}, {"t": "Restaurante La Rueda 1975", "u": "https://www.google.com/maps/place/Restaurante+La+Rueda+1975/data=!4m2!3m1!1s0x94f6923a6983d9eb:0xcedec32704ca4c56", "c": "eat", "y": "Iguazú & Northeast"}, {"t": "Cuervo Café", "u": "https://www.google.com/maps/place/Cuervo+Caf%C3%A9/data=!4m2!3m1!1s0x95bcca78806b5f17:0xd9772ecf3548058c", "c": "cafe", "y": "Buenos Aires"}, {"t": "Café Colón", "u": "https://www.google.com/maps/place/Caf%C3%A9+Col%C3%B3n/data=!4m2!3m1!1s0x9457bfb2b5c9b3a5:0x735a58dee8762f6e", "c": "cafe", "y": "Iguazú & Northeast"}, {"t": "Café París", "u": "https://www.google.com/maps/place/Caf%C3%A9+Par%C3%ADs/data=!4m2!3m1!1s0x9457be34bee38fc9:0x83e4e87f90de48af", "c": "cafe", "y": "Iguazú & Northeast"}, {"t": "Hotel Urbano", "u": "https://www.google.com/maps/place/Hotel+Urbano/data=!4m2!3m1!1s0x9457be314da75e79:0xf056be7906b6fd45", "c": "stay", "y": "Iguazú & Northeast"}, {"t": "Earthship Patagonia Eco Hostel", "u": "https://www.google.com/maps/place/Earthship+Patagonia+Eco+Hostel/data=!4m2!3m1!1s0x961bbfcdc70c7abb:0x49495992127c1265", "c": "stay", "y": "Bariloche & Lakes"}, {"t": "Hotel Posada La Sorgente", "u": "https://www.google.com/maps/place/Hotel+Posada+La+Sorgente/data=!4m2!3m1!1s0x94f6923af74e96dd:0x64e591600ee10353", "c": "stay", "y": "Iguazú & Northeast"}, {"t": "Nuevo Hotel Geminis", "u": "https://www.google.com/maps/place/Nuevo+Hotel+Geminis/data=!4m2!3m1!1s0x9457389214d87fc3:0x3d8686f9b5337ac4", "c": "stay", "y": "Iguazú & Northeast"}, {"t": "Hostel Art Factory Soho", "u": "https://www.google.com/maps/place/Hostel+Art+Factory+Soho/data=!4m2!3m1!1s0x95bcb584f6742c53:0x4d951414a6dd0e29", "c": "stay", "y": "Buenos Aires"}, {"t": "Hotel Identidad", "u": "https://www.google.com/maps/place/Hotel+Identidad/data=!4m2!3m1!1s0x94456ca16eac36f3:0x6090b54f485784c5", "c": "stay", "y": "Iguazú & Northeast"}, {"t": "Plaza de Mayo", "u": "https://www.google.com/maps/place/Plaza+de+Mayo/data=!4m2!3m1!1s0x95bccadb57fd1e5f:0xcc737c4eb0a8614b", "c": "see", "y": "Buenos Aires"}, {"t": "Estatua de Mafalda", "u": "https://www.google.com/maps/place/Estatua+de+Mafalda/data=!4m2!3m1!1s0x95a3354dd6271479:0x962789966f588ee6", "c": "see", "y": "Buenos Aires"}, {"t": "Cerro López", "u": "https://www.google.com/maps/place/Cerro+L%C3%B3pez/data=!4m2!3m1!1s0x961a0b2d5e0bc629:0x38c719fd5b70cb85", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Cerro Tronador", "u": "https://www.google.com/maps/place/Cerro+Tronador/data=!4m2!3m1!1s0x961a016a133643cf:0x1c407898e96f7d57", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Cajón Del Azul", "u": "https://www.google.com/maps/place/Caj%C3%B3n+Del+Azul/data=!4m2!3m1!1s0x961bc6354bb023e5:0xc5443b6205c31a7b", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Refugio Frey", "u": "https://www.google.com/maps/place/Refugio+Frey/data=!4m2!3m1!1s0x961a6df97763bbcb:0x8a979dbd556aaa0b", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Laguna Negra", "u": "https://www.google.com/maps/place/Laguna+Negra/data=!4m2!3m1!1s0x961a0caeb6fb6247:0x47ed8bb00b709956", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Iberá Wetlands", "u": "https://www.google.com/maps/place/Iber%C3%A1+Wetlands/data=!4m2!3m1!1s0x94510c9dfd072b91:0x9bb4dc35925f3a41", "c": "see", "y": "Iguazú & Northeast"}, {"t": "San Martín de los Andes", "u": "https://www.google.com/maps/place/San+Mart%C3%ADn+de+los+Andes/data=!4m2!3m1!1s0x96110e743605d0c7:0x71c43ffb1c66bc3a", "c": "see", "y": "Buenos Aires"}, {"t": "Villa La Angostura", "u": "https://www.google.com/maps/place/Villa+La+Angostura/data=!4m2!3m1!1s0x9610bf42e48faa93:0x205ebc786470b636", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Catedral de San José", "u": "https://www.google.com/maps/place/Catedral+de+San+Jos%C3%A9/data=!4m2!3m1!1s0x9457be347fb3d147:0x25ba4e668b07cd41", "c": "see", "y": "Iguazú & Northeast"}, {"t": "9 de Julio", "u": "https://www.google.com/maps/place/9+de+Julio/data=!4m2!3m1!1s0x9457be3462ea3965:0xc9d65f372b500532", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Paseo Bosetti And Monument Of Mate", "u": "https://www.google.com/maps/place/Paseo+Bosetti+And+Monument+Of+Mate/data=!4m2!3m1!1s0x9457be34d0657d9f:0xadffae3ea450d38e", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Mafalda, Susanita y Manolito - Paseo de la Historieta", "u": "https://www.google.com/maps/place/Mafalda,+Susanita+y+Manolito+-+Paseo+de+la+Historieta/data=!4m2!3m1!1s0x95a334d53567fbbd:0x85b1b8c1f9c6c345", "c": "see", "y": "Buenos Aires"}, {"t": "El Chaltén", "u": "https://www.google.com/maps/place/El+Chalt%C3%A9n/data=!4m2!3m1!1s0xbdbd03fe92914231:0xc4be5aa754aefc", "c": "see", "y": "Patagonia South"}, {"t": "Tigre", "u": "https://www.google.com/maps/place/Tigre/data=!4m2!3m1!1s0x95bca5a2d0ddb9b1:0x2c1a974c67cba1e4", "c": "see", "y": "Buenos Aires"}, {"t": "Perito Moreno Glacier", "u": "https://www.google.com/maps/place/Perito+Moreno+Glacier/data=!4m2!3m1!1s0xbda4c963217850c3:0xa481a2efaf7479be", "c": "see", "y": "Patagonia South"}, {"t": "El Bolsón", "u": "https://www.google.com/maps/place/El+Bols%C3%B3n/data=!4m2!3m1!1s0x961bbe292d49ca89:0xa4fcd4026336e0f6", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Laguna del Diamante", "u": "https://www.google.com/maps/place/Laguna+del+Diamante/data=!4m2!3m1!1s0x967c8064faa75b63:0x2860f56ef17b760d", "c": "see", "y": "Mendoza"}, {"t": "Recoleta Cemetery", "u": "https://www.google.com/maps/place/Recoleta+Cemetery/data=!4m2!3m1!1s0x95bccaa2f10791b3:0xa1180ac6dc17a5c3", "c": "see", "y": "Buenos Aires"}, {"t": "Cueva de las Manos", "u": "https://www.google.com/maps/place/Cueva+de+las+Manos/data=!4m2!3m1!1s0xbdeb649ea6b0df75:0xa2fee4aa1fdc7910", "c": "see", "y": "Patagonia South"}, {"t": "Purmamarca", "u": "https://www.google.com/maps/place/Purmamarca/data=!4m2!3m1!1s0x941b49ca833a1183:0x9d3ebf375117fa08", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Tilcara", "u": "https://www.google.com/maps/place/Tilcara/data=!4m2!3m1!1s0x9404cb42c619d3a3:0xbf9ed8d6df7bdd53", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Salinas Grandes", "u": "https://www.google.com/maps/place/Salinas+Grandes/data=!4m2!3m1!1s0x941cad45ae3f7d3d:0xc49065866ed65cdf", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Estadio Alberto J Armando", "u": "https://www.google.com/maps/place/Estadio+Alberto+J+Armando/data=!4m2!3m1!1s0x95a334b6925e5473:0x1ca5b2748858b40d", "c": "see", "y": "Buenos Aires"}, {"t": "Casa Mínima", "u": "https://www.google.com/maps/place/Casa+M%C3%ADnima/data=!4m2!3m1!1s0x95a334d4c606bad5:0x9a6a6c2d14d0ca2f", "c": "see", "y": "Buenos Aires"}, {"t": "Caminito", "u": "https://www.google.com/maps/place/Caminito/data=!4m2!3m1!1s0x95a334b0f8639693:0x9ee9f7e4b5eeaf14", "c": "see", "y": "Buenos Aires"}, {"t": "Cafayate", "u": "https://www.google.com/maps/place/Cafayate/data=!4m2!3m1!1s0x941f311369c3a61b:0x540e61c61f3a5d0c", "c": "see", "y": "Cafayate"}, {"t": "Teleférico San Bernardo", "u": "https://www.google.com/maps/place/Telef%C3%A9rico+San+Bernardo/data=!4m2!3m1!1s0x941bc3a20a83f125:0x8fbadaef9a0696a1", "c": "see", "y": "Salta"}, {"t": "Tren a las Nubes", "u": "https://www.google.com/maps/place/Tren+a+las+Nubes/data=!4m2!3m1!1s0x941bc3a4a7aa6f95:0xee425eb9da99fedd", "c": "see", "y": "Salta"}, {"t": "Iruya", "u": "https://www.google.com/maps/place/Iruya/data=!4m2!3m1!1s0x940456eb1dc1f4b5:0xafc3aef6c01e4139", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Humahuaca", "u": "https://www.google.com/maps/place/Humahuaca/data=!4m2!3m1!1s0x9404e9a4ba40a8c1:0x5ff8703d0479ecf9", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Dunas de Tatón", "u": "https://www.google.com/maps/place/Dunas+de+Tat%C3%B3n/data=!4m2!3m1!1s0x969fcf98601b2217:0xd6376323625b3a0a", "c": "see", "y": "Catamarca & Puna"}, {"t": "Pozo Verde", "u": "https://www.google.com/maps/place/Pozo+Verde/data=!4m2!3m1!1s0x94204537bb0dc33f:0x982323c8571c66a4", "c": "see", "y": "Cafayate"}, {"t": "San Isidro de Iruya", "u": "https://www.google.com/maps/place/San+Isidro+de+Iruya/data=!4m2!3m1!1s0x940450f9fde74c69:0xd2c5e899b1b05e91", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Garganta del Diablo", "u": "https://www.google.com/maps/place/Garganta+del+Diablo/data=!4m2!3m1!1s0x9418d7183c19e369:0x94ac374158dde844", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "Área natural protegida Campo de Piedra Pómez", "u": "https://www.google.com/maps/place/%C3%81rea+natural+protegida+Campo+de+Piedra+P%C3%B3mez/data=!4m2!3m1!1s0x96a00f5e4e4c8a27:0xa5f6b3bd0e5a5de2", "c": "stay", "y": "Catamarca & Puna"}, {"t": "Termas de Fiambala", "u": "https://www.google.com/maps/place/Termas+de+Fiambala/data=!4m2!3m1!1s0x969e2523d2348297:0xeba404dd89c8abae", "c": "see", "y": "Catamarca & Puna"}, {"t": "Antofagasta de la Sierra", "u": "https://www.google.com/maps/place/Antofagasta+de+la+Sierra/data=!4m2!3m1!1s0x96a08767f1ea4757:0x86578ebbde15b587", "c": "see", "y": "Catamarca & Puna"}, {"t": "Isla Santa Maria", "u": "https://www.google.com/maps/place/Isla+Santa+Maria/data=!4m2!3m1!1s0x96b1dac40d7f0a7d:0xc62dc18897f8906a", "c": "see", "y": "Catamarca & Puna"}, {"t": "Cabildo de Córdoba", "u": "https://www.google.com/maps/place/Cabildo+de+C%C3%B3rdoba/data=!4m2!3m1!1s0x9432a28340e9d9f5:0x10d5791e61043311", "c": "see", "y": "Córdoba"}, {"t": "La Fauna", "u": "https://www.google.com/maps/place/La+Fauna/data=!4m2!3m1!1s0x9432a3c1e4097031:0x17b4242063d506c4", "c": "see", "y": "Córdoba"}, {"t": "Rueda Eiffel", "u": "https://www.google.com/maps/place/Rueda+Eiffel/data=!4m2!3m1!1s0x9432a37272f81e8f:0x84d56f7ddc8c009", "c": "see", "y": "Córdoba"}, {"t": "Serranía de Hornocal", "u": "https://www.google.com/maps/place/Serran%C3%ADa+de+Hornocal/data=!4m2!3m1!1s0x9404df144da3dd73:0x46b25aac4e8bd4cf", "c": "see", "y": "Jujuy & Quebrada"}, {"t": "La Cumbrecita", "u": "https://www.google.com/maps/place/La+Cumbrecita/data=!4m2!3m1!1s0x95d2cb22ee24bc3f:0x9455570e961749c", "c": "see", "y": "Córdoba"}, {"t": "Balneario El Brete", "u": "https://www.google.com/maps/place/Balneario+El+Brete/data=!4m2!3m1!1s0x9457be27ca3ece89:0x1eb7af44dfece7e1", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Monumento a Andresito Guacurarí", "u": "https://www.google.com/maps/place/Monumento+a+Andresito+Guacurar%C3%AD/data=!4m2!3m1!1s0x9457bf8ae49856c1:0x5cb18155257d9c95", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Circuito Indio Dormido", "u": "https://www.google.com/maps/place/Circuito+Indio+Dormido/data=!4m2!3m1!1s0x9457e74227c51877:0x597a2e1485f96c63", "c": "see", "y": "Iguazú & Northeast"}, {"t": "Cerveza Patagonia - Cerveceria Bariloche", "u": "https://www.google.com/maps/place/Cerveza+Patagonia+-+Cerveceria+Bariloche/data=!4m2!3m1!1s0x961a75121b6ded85:0x6b735f5f616ee6f1", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Floralis Generica", "u": "https://www.google.com/maps/place/Floralis+Generica/data=!4m2!3m1!1s0x95bccb06d18d5225:0x3652591aa77e712f", "c": "see", "y": "Buenos Aires"}, {"t": "Comuna 11", "u": "https://www.google.com/maps/place/Comuna+11/data=!4m2!3m1!1s0x95bcb61cfd87d631:0xf93e5e1e74b41773", "c": "see", "y": "Buenos Aires"}, {"t": "WINING - Sinergia vitivinícola", "u": "https://www.google.com/maps/place/WINING+-+Sinergia+vitivin%C3%ADcola/data=!4m2!3m1!1s0x95bccbb779891ed9:0xadbb80ec8dc2e234", "c": "drink", "y": "Buenos Aires"}, {"t": "San Telmo Market", "u": "https://www.google.com/maps/place/San+Telmo+Market/data=!4m2!3m1!1s0x95bccb2a8c8653db:0x7f79f9bc2a8522f1", "c": "see", "y": "Buenos Aires"}, {"t": "Al Diablo Coffee Roasters", "u": "https://www.google.com/maps/place/Al+Diablo+Coffee+Roasters/data=!4m2!3m1!1s0x95bcb50ddf045e53:0x70128ae1380894cf", "c": "cafe", "y": "Buenos Aires"}, {"t": "La Cantina de Oveja", "u": "https://www.google.com/maps/place/La+Cantina+de+Oveja/data=!4m2!3m1!1s0x961a7bc22dd7c66b:0xe70ce6bf0f85732b", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Ciudad Cultural Konex", "u": "https://www.google.com/maps/place/Ciudad+Cultural+Konex/data=!4m2!3m1!1s0x95bcb577e34f9e55:0x6dd823092cb367d9", "c": "see", "y": "Buenos Aires"}, {"t": "Vertiente Café con Ideas", "u": "https://www.google.com/maps/place/Vertiente+Caf%C3%A9+con+Ideas/data=!4m2!3m1!1s0x961a7b1310802793:0x3932de385fcc953e", "c": "cafe", "y": "Bariloche & Lakes"}, {"t": "Fuegos de Patagonia", "u": "https://www.google.com/maps/place/Fuegos+de+Patagonia/data=!4m2!3m1!1s0x961a77cd78143ffb:0x165a052a55c152fe", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Librería Cultura", "u": "https://www.google.com/maps/place/Librer%C3%ADa+Cultura/data=!4m2!3m1!1s0x961a7b0d1071764b:0x77db1b7065bd0c87", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Pizzeria LaTana", "u": "https://www.google.com/maps/place/Pizzeria+LaTana/data=!4m2!3m1!1s0x961a7bc0f0d744d5:0xdeb42edda34b684a", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "El Boliche de Alberto Pastas", "u": "https://www.google.com/maps/place/El+Boliche+de+Alberto+Pastas/data=!4m2!3m1!1s0x961a7b6d9041820b:0x126aaa6dc1c36d74", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Restaurant Lingüini", "u": "https://www.google.com/maps/place/Restaurant+Ling%C3%BCini/data=!4m2!3m1!1s0x961a7b71fa925127:0x2fb26b8751b6070e", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Hipódromo de San Isidro", "u": "https://www.google.com/maps/place/Hip%C3%B3dromo+de+San+Isidro/data=!4m2!3m1!1s0x95bcb040d363f587:0x78e513cecbc25f7f", "c": "see", "y": "Buenos Aires"}, {"t": "Vistas Verdes", "u": "https://www.google.com/maps/place/Vistas+Verdes/data=!4m2!3m1!1s0x9457388db7bd4e3f:0xc669c07f56dd23b9", "c": "see", "y": "Iguazú & Northeast"}, {"t": "CLAVE CAFE", "u": "https://www.google.com/maps/place/CLAVE+CAFE/data=!4m2!3m1!1s0x95bcca7782f00003:0xca14394a327ef00b", "c": "cafe", "y": "Buenos Aires"}, {"t": "GEBA", "u": "https://www.google.com/maps/place/GEBA/data=!4m2!3m1!1s0x95bcb5a57fefe1ad:0xadc229f0dd3725c7", "c": "see", "y": "Buenos Aires"}, {"t": "Vorterix", "u": "https://www.google.com/maps/place/Vorterix/data=!4m2!3m1!1s0x95bcb5e77287c945:0xbaff5332b9e61c29", "c": "see", "y": "Buenos Aires"}, {"t": "Moscu Buenos Aires", "u": "https://www.google.com/maps/place/Moscu+Buenos+Aires/data=!4m2!3m1!1s0x95bcb58316dca717:0x10d7f4240b7e19b0", "c": "drink", "y": "Buenos Aires"}, {"t": "Medialunas Calentitas", "u": "https://www.google.com/maps/place/Medialunas+Calentitas/data=!4m2!3m1!1s0x94456ca44f64316f:0x55198c9365d6aeed", "c": "eat", "y": "Iguazú & Northeast"}, {"t": "PADRE", "u": "https://www.google.com/maps/place/PADRE/data=!4m2!3m1!1s0x95bcb58662c71105:0x1a41888933068457", "c": "eat", "y": "Buenos Aires"}, {"t": "La Alacena Trattoria", "u": "https://www.google.com/maps/place/La+Alacena+Trattoria/data=!4m2!3m1!1s0x95bcca7eabe5f8d7:0x5f5a8146731a2469", "c": "eat", "y": "Buenos Aires"}, {"t": "Rapanui", "u": "https://www.google.com/maps/place/Rapanui/data=!4m2!3m1!1s0x961a7b726a6e1651:0x82435c472ce51dee", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Mamuschka", "u": "https://www.google.com/maps/place/Mamuschka/data=!4m2!3m1!1s0x961a7a602a6e32f3:0x6398c06fae24cc07", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Lake Club Cirse", "u": "https://www.google.com/maps/place/Lake+Club+Cirse/data=!4m2!3m1!1s0x961a77f9bbea28c1:0xf22697177f932cf2", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Bioaurea", "u": "https://www.google.com/maps/place/Bioaurea/data=!4m2!3m1!1s0x95bcb5814de7cac7:0xf955dee026f0b3ee", "c": "see", "y": "Buenos Aires"}, {"t": "Frank's", "u": "https://www.google.com/maps/place/Frank's/data=!4m2!3m1!1s0x95bcb5ed07f24a2d:0x709b4a5279158cc5", "c": "drink", "y": "Buenos Aires"}, {"t": "Airport Bar", "u": "https://www.google.com/maps/place/Airport+Bar/data=!4m2!3m1!1s0x95bcb5932b08ec0d:0x28eec4f640ac0303", "c": "drink", "y": "Buenos Aires"}, {"t": "Liberty Domingo Faustino Sarmiento Palace", "u": "https://www.google.com/maps/place/Liberty+Domingo+Faustino+Sarmiento+Palace/data=!4m2!3m1!1s0x95a3353283598701:0xff14e7edde2f5152", "c": "see", "y": "Buenos Aires"}, {"t": "Alchemy", "u": "https://www.google.com/maps/place/Alchemy/data=!4m2!3m1!1s0x95bcb58e172df5a1:0xc2c40b835fe445d6", "c": "drink", "y": "Buenos Aires"}, {"t": "Croque Madame", "u": "https://www.google.com/maps/place/Croque+Madame/data=!4m2!3m1!1s0x95bcb5621564a03f:0xd3aee0b330eb9e1f", "c": "cafe", "y": "Buenos Aires"}, {"t": "VON BERRY HOUSE", "u": "https://www.google.com/maps/place/VON+BERRY+HOUSE/data=!4m2!3m1!1s0x95bcb591b0efce7f:0x47b076428b38cc2d", "c": "cafe", "y": "Buenos Aires"}, {"t": "Trattoria Olivetti", "u": "https://www.google.com/maps/place/Trattoria+Olivetti/data=!4m2!3m1!1s0x95bcb579773c6ecf:0x2ed886195eff2cfe", "c": "eat", "y": "Buenos Aires"}, {"t": "Let it V", "u": "https://www.google.com/maps/place/Let+it+V/data=!4m2!3m1!1s0x95bcb5dd3e7a2169:0x2c032e0231e6e679", "c": "eat", "y": "Buenos Aires"}, {"t": "Dalchemist Coffee & Retail", "u": "https://www.google.com/maps/place/Dalchemist+Coffee+%26+Retail/data=!4m2!3m1!1s0x95bcb56405ca0dd3:0x922364a7431873f0", "c": "cafe", "y": "Buenos Aires"}, {"t": "ISPICA Caffe e Pasticceria", "u": "https://www.google.com/maps/place/ISPICA+Caffe+e+Pasticceria/data=!4m2!3m1!1s0x95bcb568fb6291ad:0xdf6a8466483cbccf", "c": "cafe", "y": "Buenos Aires"}, {"t": "The Vintage Hole", "u": "https://www.google.com/maps/place/The+Vintage+Hole/data=!4m2!3m1!1s0x95bccbf04fb6e6bf:0x92687593e9bd5a37", "c": "drink", "y": "Buenos Aires"}, {"t": "The Tasting Company", "u": "https://www.google.com/maps/place/The+Tasting+Company/data=!4m2!3m1!1s0x95bcb784ecb36985:0xb5d968c3ccfd2a17", "c": "drink", "y": "Buenos Aires"}, {"t": "Espacio Piedras Blancas", "u": "https://www.google.com/maps/place/Espacio+Piedras+Blancas/data=!4m2!3m1!1s0x95bcb586211edc13:0x976e3516b0b4c756", "c": "eat", "y": "Buenos Aires"}, {"t": "Mirutaki", "u": "https://www.google.com/maps/place/Mirutaki/data=!4m2!3m1!1s0x95bcb591310eaaab:0x561c6eaad88e15d9", "c": "eat", "y": "Buenos Aires"}, {"t": "Cantina Palermo", "u": "https://www.google.com/maps/place/Cantina+Palermo/data=!4m2!3m1!1s0x95bcb591ad10b617:0xfe06fc4b84af1d26", "c": "eat", "y": "Buenos Aires"}, {"t": "Corte Charcuteria", "u": "https://www.google.com/maps/place/Corte+Charcuteria/data=!4m2!3m1!1s0x95bcb55b71deaed9:0x123de4b104de3463", "c": "eat", "y": "Buenos Aires"}, {"t": "Península Petit Hotel", "u": "https://www.google.com/maps/place/Pen%C3%ADnsula+Petit+Hotel/data=!4m2!3m1!1s0x961a75e0932bdffd:0xdd101d5602be5fa4", "c": "stay", "y": "Bariloche & Lakes"}, {"t": "Maleza", "u": "https://www.google.com/maps/place/Maleza/data=!4m2!3m1!1s0x961a7b2db6c95291:0x50b68b6c6a2d9104", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Ice Bariloche", "u": "https://www.google.com/maps/place/Ice+Bariloche/data=!4m2!3m1!1s0x961a7b0ea0c8eb6d:0x9c53abaeba26758e", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Bowling Lake", "u": "https://www.google.com/maps/place/Bowling+Lake/data=!4m2!3m1!1s0x961a7b72071004dd:0xf3c3482295c6f100", "c": "see", "y": "Bariloche & Lakes"}, {"t": "Cuchara Resto", "u": "https://www.google.com/maps/place/Cuchara+Resto/data=!4m2!3m1!1s0x961a7b3d0580b2c5:0x3e78870f56dbba5e", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "La Fonda del Tío", "u": "https://www.google.com/maps/place/La+Fonda+del+T%C3%ADo/data=!4m2!3m1!1s0x961a7b6487a6fb65:0x3545df890f220cc6", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "SEDE", "u": "https://www.google.com/maps/place/SEDE/data=!4m2!3m1!1s0x961a7baf4b8c0283:0x98669d8cd83be83a", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Chimi Bar de Choris", "u": "https://www.google.com/maps/place/Chimi+Bar+de+Choris/data=!4m2!3m1!1s0x961a7b6d650dfb41:0xaa10ef6cd959395c", "c": "drink", "y": "Bariloche & Lakes"}, {"t": "Pollería Belgrano", "u": "https://www.google.com/maps/place/Poller%C3%ADa+Belgrano/data=!4m2!3m1!1s0x961a7b92f6255a7b:0x9e0a0c94effedf8e", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "La Marmite", "u": "https://www.google.com/maps/place/La+Marmite/data=!4m2!3m1!1s0x961a7b71f8673dcf:0x8b70797c40490350", "c": "eat", "y": "Bariloche & Lakes"}, {"t": "Casa Chaí Dietética natural", "u": "https://www.google.com/maps/place/Casa+Cha%C3%AD+Diet%C3%A9tica+natural/data=!4m2!3m1!1s0x95bccb553986dd89:0x749158d42dcb9466", "c": "eat", "y": "Buenos Aires"}, {"t": "Calden del soho Grill", "u": "https://www.google.com/maps/place/Calden+del+soho+Grill/data=!4m2!3m1!1s0x95bcca7875c91c47:0x6fcf14f056866c17", "c": "eat", "y": "Buenos Aires"}, {"t": "roho", "u": "https://www.google.com/maps/place/roho/data=!4m2!3m1!1s0x95bcca449ea0e5d7:0x9842b98d49105c40", "c": "drink", "y": "Buenos Aires"}, {"t": "Solomía Parrilla", "u": "https://www.google.com/maps/place/Solom%C3%ADa+Parrilla/data=!4m2!3m1!1s0x95bcb42f3bd714c9:0xf713ad819caf1424", "c": "eat", "y": "Buenos Aires"}, {"t": "Usina Cafetera", "u": "https://www.google.com/maps/place/Usina+Cafetera/data=!4m2!3m1!1s0x95bcb668bfb8288d:0xe875f67ee02b3045", "c": "cafe", "y": "Buenos Aires"}, {"t": "El Alambique Resto", "u": "https://www.google.com/maps/place/El+Alambique+Resto/data=!4m2!3m1!1s0xbdbb0c909764f0ff:0x63a2be6e2ac2504a", "c": "eat", "y": "Patagonia South"}, {"t": "Kayak Santa Cruz", "u": "https://www.google.com/maps/place/Kayak+Santa+Cruz/data=!4m2!3m1!1s0xbdbb0cbeffd34161:0x5d60b0a2eef72a37", "c": "see", "y": "Patagonia South"}, {"t": "Patagonia Dreams - Operador Receptivo", "u": "https://www.google.com/maps/place/Patagonia+Dreams+-+Operador+Receptivo/data=!4m2!3m1!1s0xbdbb0cba1b6b623b:0xe3bcf6c7f7981936", "c": "see", "y": "Patagonia South"}, {"t": "Calafate Kayaks", "u": "https://www.google.com/maps/place/Calafate+Kayaks/data=!4m2!3m1!1s0xbdbb0d9bbbf73e4f:0x1c077768e0d302ed", "c": "see", "y": "Patagonia South"}, {"t": "Tutto Urquiza", "u": "https://www.google.com/maps/place/Tutto+Urquiza/data=!4m2!3m1!1s0x95bcb74527207ab1:0xdd560ed758f18b2e", "c": "eat", "y": "Buenos Aires"}];
+
+const CITIES = [
+{id:'all',label:'All Cities',emoji:'🇦🇷'},
+{id:'Buenos Aires',label:'Buenos Aires',emoji:'🏙️'},
+{id:'Bariloche & Lakes',label:'Bariloche & Lakes',emoji:'🏔️'},
+{id:'Iguazú & Northeast',label:'Iguazú & Northeast',emoji:'🌊'},
+{id:'Córdoba',label:'Córdoba',emoji:'🏛️'},
+{id:'Jujuy & Quebrada',label:'Jujuy & Quebrada',emoji:'🌈'},
+{id:'Salta',label:'Salta',emoji:'⛪'},
+{id:'Patagonia South',label:'Patagonia South',emoji:'🧊'},
+{id:'Catamarca & Puna',label:'Catamarca & Puna',emoji:'🏜️'},
+{id:'Cafayate',label:'Cafayate',emoji:'🍇'},
+{id:'Mendoza',label:'Mendoza',emoji:'🍷'},
+];
+
+const CATS = [
+{id:'all',label:'All',icon:'🗺️'},
+{id:'eat',label:'Where to Eat',icon:'🍽️',cls:'cat-eat'},
+{id:'cafe',label:'Cafés',icon:'☕',cls:'cat-cafe'},
+{id:'drink',label:'Drinks & Bars',icon:'🍷',cls:'cat-drink'},
+{id:'see',label:'See & Do',icon:'✨',cls:'cat-see'},
+{id:'stay',label:'Stay',icon:'🏨',cls:'cat-stay'},
+];
+
+let activeCity = 'all';
+let activeCat = 'all';
+
+function getFiltered(){
+  let d = DATA;
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  if(activeCity!=='all') d = d.filter(x=>x.y===activeCity);
+  if(activeCat!=='all') d = d.filter(x=>x.c===activeCat);
+  if(q) d = d.filter(x=>x.t.toLowerCase().includes(q));
+  return d;
+}
+
+function render(){
+  const filtered = getFiltered();
+
+  // City nav
+  const cn = document.getElementById('cityNav');
+  cn.innerHTML = CITIES.map(c=>{
+    const cnt = c.id==='all'? DATA.length : DATA.filter(x=>x.y===c.id).length;
+    if(cnt===0 && c.id!=='all') return '';
+    return `<button class="city-btn ${activeCity===c.id?'active':''}" onclick="activeCity='${c.id}';render()">
+    ${c.emoji} ${c.label}<span class="cnt">${cnt}</span></button>`;
+  }).join('');
+
+  // Cat pills
+  const catn = document.getElementById('catNav');
+  const base = activeCity==='all'? DATA : DATA.filter(x=>x.y===activeCity);
+  catn.innerHTML = CATS.map(c=>{
+    const cnt = c.id==='all'? base.length : base.filter(x=>x.c===c.id).length;
+    if(cnt===0 && c.id!=='all') return '';
+    return `<button class="cat-pill ${activeCat===c.id?'active':''}" onclick="activeCat='${c.id}';render()">
+    ${c.icon} ${c.label}<span class="cnt">${cnt}</span></button>`;
+  }).join('');
+
+  // Body - group by city, then by category
+  const body = document.getElementById('guideBody');
+
+  if(!filtered.length){
+    body.innerHTML = '<div class="empty-state">No places match. Try a different search or filter.</div>';
+    return;
+  }
+
+  // Group by city
+  const cityOrder = CITIES.filter(c=>c.id!=='all').map(c=>c.id);
+  const byCityMap = {};
+  filtered.forEach(p=>{
+    if(!byCityMap[p.y]) byCityMap[p.y] = [];
+    byCityMap[p.y].push(p);
+  });
+
+  let html = '';
+  cityOrder.forEach(cityId=>{
+    const cityPlaces = byCityMap[cityId];
+    if(!cityPlaces || !cityPlaces.length) return;
+    const cityInfo = CITIES.find(c=>c.id===cityId);
+
+    html += `<section class="city-section" id="city-${cityId.replace(/[^a-z]/gi,'')}">
+    <div class="city-header">
+      <span class="city-name">${cityInfo.emoji} ${cityInfo.label}</span>
+      <span class="city-count">${cityPlaces.length} places</span>
+    </div>`;
+
+    // Group by category within city
+    const catOrder = CATS.filter(c=>c.id!=='all');
+    catOrder.forEach(cat=>{
+      const items = cityPlaces.filter(p=>p.c===cat.id);
+      if(!items.length) return;
+      html += `<div class="cat-group ${cat.cls||''}">
+        <div class="cat-group-header"><span class="cat-dot"></span>${cat.icon} ${cat.label}</div>
+        <div class="places-list">
+        ${items.map(p=>`<a class="place-card" href="${p.u}" target="_blank" rel="noopener">
+          <span class="place-name">${p.t}</span>
+          <span class="place-arrow">→</span>
+        </a>`).join('')}
+        </div></div>`;
+    });
+
+    html += '</section>';
+  });
+
+  body.innerHTML = html;
+}
+
+document.getElementById('searchBox').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

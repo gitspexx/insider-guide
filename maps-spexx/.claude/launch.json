@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "maps-spexx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--host", "--root", "maps-spexx"],
+      "port": 5173
+    }
+  ]
+}
