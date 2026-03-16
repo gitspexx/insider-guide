@@ -19,7 +19,16 @@ export default function Home() {
         .order('name')
 
       if (countryData) {
-        setCountries(countryData)
+        // Custom order: colombia first, then brazil, then guatemala. Hide argentina.
+        const ORDER = ['colombia', 'brazil', 'guatemala']
+        const sorted = countryData
+          .filter((c) => c.slug !== 'argentina')
+          .sort((a, b) => {
+            const ai = ORDER.indexOf(a.slug)
+            const bi = ORDER.indexOf(b.slug)
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+          })
+        setCountries(sorted)
 
         const { data: bizData } = await supabase
           .from('businesses')

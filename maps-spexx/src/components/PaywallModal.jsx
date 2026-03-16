@@ -48,7 +48,7 @@ export default function PaywallModal({ country, onClose }) {
               Get early access
             </p>
             <p className="text-xs text-text-secondary leading-relaxed">
-              DM <span className="text-gold">@alexspexx</span> on Instagram with the country name to unlock this guide when it drops.
+              DM <a href="https://www.instagram.com/alexspexx" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">@alexspexx</a> on Instagram with the country name to unlock this guide when it drops.
             </p>
           </div>
 
