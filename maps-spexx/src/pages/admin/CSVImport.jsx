@@ -461,7 +461,6 @@ export default function CSVImport() {
                               slug: slugify(newCountryName.trim()),
                               flag_emoji: newCountryFlag.trim() || '🏳️',
                               published: true,
-                              locked: false,
                             })
                             .select()
                             .single()
