@@ -330,21 +330,20 @@ export default function CSVImport() {
     }
   }
 
-  async function handleEnrich() {
-    if (importedIds.length === 0) return
+  async function handleEnrich(idsToEnrich) {
+    const ids = idsToEnrich || importedIds
+    if (ids.length === 0) return
     setEnriching(true)
     setEnrichResult(null)
-    setEnrichProgress({ done: 0, total: importedIds.length, found: { email: 0, whatsapp: 0, instagram: 0, website: 0 } })
+    setEnrichProgress({ done: 0, total: ids.length, found: { email: 0, whatsapp: 0, instagram: 0, website: 0 } })
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-
       // Process in batches of 5 to avoid rate limits
       const BATCH = 5
-      const progress = { done: 0, total: importedIds.length, found: { email: 0, whatsapp: 0, instagram: 0, website: 0 } }
+      const progress = { done: 0, total: ids.length, found: { email: 0, whatsapp: 0, instagram: 0, website: 0 } }
 
-      for (let i = 0; i < importedIds.length; i += BATCH) {
-        const batch = importedIds.slice(i, i + BATCH)
+      for (let i = 0; i < ids.length; i += BATCH) {
+        const batch = ids.slice(i, i + BATCH)
 
         const res = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scrape-contacts`,
@@ -352,7 +351,6 @@ export default function CSVImport() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
               apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({ business_ids: batch }),
@@ -384,6 +382,25 @@ export default function CSVImport() {
     } finally {
       setEnriching(false)
     }
+  }
+
+  async function handleEnrichCountry() {
+    if (!selectedCountry) return
+    // Load all unenriched businesses for this country
+    const { data } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('country_id', selectedCountry)
+      .or('email.is.null,email.eq.')
+      .not('google_maps_url', 'is', null)
+      .neq('google_maps_url', '')
+
+    if (!data || data.length === 0) {
+      setEnrichResult({ ok: false, text: 'No unenriched businesses with Google Maps URLs found for this country' })
+      return
+    }
+
+    handleEnrich(data.map((b) => b.id))
   }
 
   function handleDrop(e) {
@@ -542,7 +559,7 @@ export default function CSVImport() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 <button
                   onClick={handleImport}
                   disabled={importing || !selectedCountry || newItems.length === 0}
@@ -552,13 +569,22 @@ export default function CSVImport() {
                 </button>
                 {importedIds.length > 0 && (
                   <button
-                    onClick={handleEnrich}
+                    onClick={() => handleEnrich()}
                     disabled={enriching}
                     className="border border-gold/50 text-gold font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-gold/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     {enriching
                       ? `Scraping ${enrichProgress.done}/${enrichProgress.total}...`
-                      : `Enrich Contacts (${importedIds.length})`}
+                      : `Enrich New (${importedIds.length})`}
+                  </button>
+                )}
+                {selectedCountry && !enriching && (
+                  <button
+                    onClick={handleEnrichCountry}
+                    disabled={enriching}
+                    className="border border-green-500/50 text-green-400 font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    🔍 Enrich All Unenriched
                   </button>
                 )}
               </div>
