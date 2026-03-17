@@ -80,6 +80,12 @@ export default function AdminDashboard() {
             <span className="text-gold text-sm tracking-wider">Dashboard</span>
           </div>
           <div className="flex gap-4 items-center">
+            <Link
+              to="/admin/import"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm transition-colors no-underline"
+            >
+              ↑ Import CSV
+            </Link>
             <button
               onClick={handleSync}
               disabled={syncing}
