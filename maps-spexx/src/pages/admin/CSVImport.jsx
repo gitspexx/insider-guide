@@ -101,6 +101,7 @@ export default function CSVImport() {
   const [enrichProgress, setEnrichProgress] = useState({ done: 0, total: 0, found: { email: 0, whatsapp: 0, instagram: 0, website: 0 } })
   const [enrichResult, setEnrichResult] = useState(null)
   const [importedIds, setImportedIds] = useState([])
+  const [enrichCountry, setEnrichCountry] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -384,23 +385,28 @@ export default function CSVImport() {
     }
   }
 
-  async function handleEnrichCountry() {
-    if (!selectedCountry) return
-    // Load all unenriched businesses for this country
+  async function handleEnrichCountry(countryId) {
+    const cid = countryId || selectedCountry || enrichCountry
+    if (!cid) return
+    // Load all businesses for this country that have a maps URL but no enriched data
     const { data } = await supabase
       .from('businesses')
-      .select('id')
-      .eq('country_id', selectedCountry)
-      .or('email.is.null,email.eq.')
-      .not('google_maps_url', 'is', null)
-      .neq('google_maps_url', '')
+      .select('id, email, instagram_handle, whatsapp, website, google_maps_url')
+      .eq('country_id', cid)
 
-    if (!data || data.length === 0) {
-      setEnrichResult({ ok: false, text: 'No unenriched businesses with Google Maps URLs found for this country' })
+    // Filter client-side: unenriched = no email AND no instagram AND no whatsapp, but has a maps URL
+    const unenriched = (data || []).filter((b) =>
+      b.google_maps_url &&
+      b.google_maps_url.trim() !== '' &&
+      !b.email && !b.instagram_handle && !b.whatsapp
+    )
+
+    if (unenriched.length === 0) {
+      setEnrichResult({ ok: false, text: `No unenriched businesses found (${(data || []).length} total, all already enriched or missing Maps URL)` })
       return
     }
 
-    handleEnrich(data.map((b) => b.id))
+    handleEnrich(unenriched.map((b) => b.id))
   }
 
   function handleDrop(e) {
@@ -710,6 +716,43 @@ export default function CSVImport() {
             </div>
           </div>
         )}
+
+        {/* Standalone Enrich Section */}
+        <div className="bg-bg-card border border-border rounded-sm p-6">
+          <h3 className="font-heading text-lg tracking-wider text-white mb-4">Enrich Existing Businesses</h3>
+          <p className="text-text-dim text-xs mb-4">
+            Select a country and scrape all unenriched businesses via Apify (email, WhatsApp, Instagram, website).
+            Enriched contacts are automatically synced to Spexx CRM.
+          </p>
+          <div className="flex items-end gap-4">
+            <div className="flex-1">
+              <label className="text-[10px] text-text-dim uppercase tracking-wider block mb-2">
+                Country to Enrich
+              </label>
+              <select
+                value={enrichCountry}
+                onChange={(e) => setEnrichCountry(e.target.value)}
+                className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
+              >
+                <option value="">Select country...</option>
+                {countries.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.flag_emoji} {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => handleEnrichCountry(enrichCountry)}
+              disabled={enriching || !enrichCountry}
+              className="border border-green-500/50 text-green-400 font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors whitespace-nowrap"
+            >
+              {enriching
+                ? `Scraping ${enrichProgress.done}/${enrichProgress.total}...`
+                : '🔍 Enrich All Unenriched'}
+            </button>
+          </div>
+        </div>
 
         {/* How it works */}
         {!fileName && (
