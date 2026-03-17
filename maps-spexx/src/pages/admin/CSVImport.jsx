@@ -239,7 +239,11 @@ export default function CSVImport() {
 
       // Sync to CRM contacts table (use insert, not upsert — partial index breaks PostgREST upsert)
       const MAPS_PROJECT_ID = '11111111-1111-1111-1111-111111111111'
+      const MAPS_PIPELINE_ID = 'aaaa1111-0000-0000-0000-000000000001'
+      const countryName = country?.name || countryTag.charAt(0).toUpperCase() + countryTag.slice(1)
       let contactsSynced = 0
+      const allContactIds = []
+
       for (let i = 0; i < allInserted.length; i += BATCH_SIZE) {
         const contactBatch = allInserted.slice(i, i + BATCH_SIZE).map((biz) => ({
           project_id: MAPS_PROJECT_ID,
@@ -248,14 +252,28 @@ export default function CSVImport() {
           source: 'google-takeout',
           external_id: `maps:${biz.id}`,
           external_url: biz.google_maps_url || null,
-          tags: ['maps-import', countryTag],
+          tags: ['maps-import', countryTag, countryName],
         }))
 
         const { data: contactData, error: contactErr } = await supabase
           .from('contacts')
           .insert(contactBatch)
           .select('id')
-        if (!contactErr && contactData) contactsSynced += contactData.length
+        if (!contactErr && contactData) {
+          contactsSynced += contactData.length
+          allContactIds.push(...contactData.map((c) => c.id))
+        }
+      }
+
+      // Create pipeline cards so contacts show in CRM pipeline view
+      for (let i = 0; i < allContactIds.length; i += BATCH_SIZE) {
+        const cardBatch = allContactIds.slice(i, i + BATCH_SIZE).map((contactId, idx) => ({
+          pipeline_id: MAPS_PIPELINE_ID,
+          contact_id: contactId,
+          stage: 'lead',
+          position: i + idx,
+        }))
+        await supabase.from('pipeline_cards').insert(cardBatch)
       }
 
       // Auto-create pipeline for this country if it doesn't exist
