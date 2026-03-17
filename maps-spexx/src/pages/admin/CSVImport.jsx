@@ -78,10 +78,18 @@ function parseGeoJSON(json) {
   return []
 }
 
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
 export default function CSVImport() {
   const [countries, setCountries] = useState([])
   const [selectedCountry, setSelectedCountry] = useState('')
   const [detectedCountry, setDetectedCountry] = useState('')
+  const [showNewCountry, setShowNewCountry] = useState(false)
+  const [newCountryName, setNewCountryName] = useState('')
+  const [newCountryFlag, setNewCountryFlag] = useState('')
+  const [creatingCountry, setCreatingCountry] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [fileName, setFileName] = useState('')
   const [parsed, setParsed] = useState([])
@@ -141,12 +149,20 @@ export default function CSVImport() {
       return
     }
 
-    // Auto-select country
+    // Auto-select country or pre-fill new country form
     const match = countries.find((c) =>
       c.name.toLowerCase() === detected.toLowerCase() ||
       c.slug.toLowerCase() === detected.toLowerCase()
     )
-    if (match) setSelectedCountry(match.id)
+    if (match) {
+      setSelectedCountry(match.id)
+      setShowNewCountry(false)
+    } else {
+      // No match — pre-fill "Add New" form with detected name
+      setShowNewCountry(true)
+      setNewCountryName(detected.charAt(0).toUpperCase() + detected.slice(1))
+      setSelectedCountry('')
+    }
 
     const text = await file.text()
     let items = []
@@ -387,43 +403,114 @@ export default function CSVImport() {
 
         {/* Country Selector */}
         {parsed.length > 0 && (
-          <div className="flex items-end gap-4">
-            <div className="flex-1">
-              <label className="text-[10px] text-text-dim uppercase tracking-wider block mb-2">
-                Target Country
-              </label>
-              <select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                className="w-full bg-bg-card border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
-              >
-                <option value="">Select country...</option>
-                {countries.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.flag_emoji} {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleImport}
-                disabled={importing || !selectedCountry || newItems.length === 0}
-                className="bg-gold text-bg font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              >
-                {importing ? `Importing...` : `Import ${newItems.length} New`}
-              </button>
-              {importedIds.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <label className="text-[10px] text-text-dim uppercase tracking-wider block mb-2">
+                  Target Country
+                </label>
+                {!showNewCountry ? (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedCountry}
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setShowNewCountry(true)
+                          setSelectedCountry('')
+                          setNewCountryName(detectedCountry ? detectedCountry.charAt(0).toUpperCase() + detectedCountry.slice(1) : '')
+                        } else {
+                          setSelectedCountry(e.target.value)
+                        }
+                      }}
+                      className="flex-1 bg-bg-card border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
+                    >
+                      <option value="">Select country...</option>
+                      {countries.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.flag_emoji} {c.name}
+                        </option>
+                      ))}
+                      <option value="__new__">+ Add New Country</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={newCountryFlag}
+                      onChange={(e) => setNewCountryFlag(e.target.value)}
+                      placeholder="🇻🇳"
+                      className="w-16 bg-bg-card border border-border rounded-sm px-3 py-3 text-sm text-white text-center focus:border-gold/30 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={newCountryName}
+                      onChange={(e) => setNewCountryName(e.target.value)}
+                      placeholder="Country name (e.g. Vietnam)"
+                      className="flex-1 bg-bg-card border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!newCountryName.trim()) return
+                        setCreatingCountry(true)
+                        try {
+                          const { data, error } = await supabase
+                            .from('countries')
+                            .insert({
+                              name: newCountryName.trim(),
+                              slug: slugify(newCountryName.trim()),
+                              flag_emoji: newCountryFlag.trim() || '🏳️',
+                              published: true,
+                              locked: false,
+                            })
+                            .select()
+                            .single()
+                          if (error) throw error
+                          setCountries((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+                          setSelectedCountry(data.id)
+                          setShowNewCountry(false)
+                          setNewCountryName('')
+                          setNewCountryFlag('')
+                        } catch (e) {
+                          setImportResult({ ok: false, text: `Failed to create country: ${e.message}` })
+                        } finally {
+                          setCreatingCountry(false)
+                        }
+                      }}
+                      disabled={creatingCountry || !newCountryName.trim()}
+                      className="bg-gold text-bg font-heading text-[11px] uppercase tracking-wider px-4 py-3 rounded-sm hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                      {creatingCountry ? 'Creating...' : 'Create'}
+                    </button>
+                    <button
+                      onClick={() => { setShowNewCountry(false); setNewCountryName(''); setNewCountryFlag('') }}
+                      className="text-text-dim hover:text-white text-sm px-2 py-3 cursor-pointer transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3">
                 <button
-                  onClick={handleEnrich}
-                  disabled={enriching}
-                  className="border border-gold/50 text-gold font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-gold/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  onClick={handleImport}
+                  disabled={importing || !selectedCountry || newItems.length === 0}
+                  className="bg-gold text-bg font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                 >
-                  {enriching
-                    ? `Scraping ${enrichProgress.done}/${enrichProgress.total}...`
-                    : `Enrich Contacts (${importedIds.length})`}
+                  {importing ? `Importing...` : `Import ${newItems.length} New`}
                 </button>
-              )}
+                {importedIds.length > 0 && (
+                  <button
+                    onClick={handleEnrich}
+                    disabled={enriching}
+                    className="border border-gold/50 text-gold font-heading text-[11px] uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-gold/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    {enriching
+                      ? `Scraping ${enrichProgress.done}/${enrichProgress.total}...`
+                      : `Enrich Contacts (${importedIds.length})`}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
