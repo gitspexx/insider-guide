@@ -233,8 +233,13 @@ export default function CSVImport() {
         if (data) allInserted.push(...data)
       }
 
-      // Also sync to CRM contacts table
+      // Get country slug for tagging
+      const country = countries.find((c) => c.id === selectedCountry)
+      const countryTag = country?.slug || 'unknown'
+
+      // Sync to CRM contacts table (use insert, not upsert — partial index breaks PostgREST upsert)
       const MAPS_PROJECT_ID = '11111111-1111-1111-1111-111111111111'
+      let contactsSynced = 0
       for (let i = 0; i < allInserted.length; i += BATCH_SIZE) {
         const contactBatch = allInserted.slice(i, i + BATCH_SIZE).map((biz) => ({
           project_id: MAPS_PROJECT_ID,
@@ -243,19 +248,48 @@ export default function CSVImport() {
           source: 'google-takeout',
           external_id: `maps:${biz.id}`,
           external_url: biz.google_maps_url || null,
-          tags: ['maps-import'],
+          tags: ['maps-import', countryTag],
         }))
 
-        await supabase.from('contacts').upsert(contactBatch, {
-          onConflict: 'project_id,external_id',
-          ignoreDuplicates: true,
+        const { data: contactData, error: contactErr } = await supabase
+          .from('contacts')
+          .insert(contactBatch)
+          .select('id')
+        if (!contactErr && contactData) contactsSynced += contactData.length
+      }
+
+      // Auto-create pipeline for this country if it doesn't exist
+      const { data: existingPipelines } = await supabase
+        .from('pipelines')
+        .select('id, name')
+        .eq('project_id', MAPS_PROJECT_ID)
+
+      const pipelineName = `${country?.name || countryTag} Pipeline`
+      const hasPipeline = existingPipelines?.some((p) =>
+        p.name.toLowerCase().includes(countryTag)
+      )
+
+      if (!hasPipeline && country) {
+        await supabase.from('pipelines').insert({
+          project_id: MAPS_PROJECT_ID,
+          name: pipelineName,
+          description: `Outreach pipeline for ${country.name} businesses`,
+          stages: JSON.stringify([
+            { id: 'to_contact', name: 'To Contact', color: '#9CA3AF' },
+            { id: 'contacted', name: 'Contacted', color: '#F59E0B' },
+            { id: 'replied', name: 'Replied', color: '#3B82F6' },
+            { id: 'negotiating', name: 'Negotiating', color: '#8B5CF6' },
+            { id: 'customer', name: 'Customer', color: '#10B981' },
+            { id: 'lost', name: 'Lost', color: '#EF4444' },
+          ]),
+          is_default: false,
         })
       }
 
       setImportedIds(allInserted.map((b) => b.id))
       setImportResult({
         ok: true,
-        text: `Imported ${allInserted.length} businesses + synced to CRM contacts`,
+        text: `Imported ${allInserted.length} businesses · ${contactsSynced} contacts synced · ${hasPipeline ? 'Pipeline exists' : 'Pipeline created'}`,
       })
 
       // Refresh existing data
