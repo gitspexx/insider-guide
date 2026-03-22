@@ -70,7 +70,7 @@ export default function Home() {
   }, [])
 
   function isUnlocked(slug) {
-    if (slug === 'colombia') return true
+    if (slug === 'colombia' || slug === 'brazil') return true
     const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
     return grants.includes(slug)
   }
