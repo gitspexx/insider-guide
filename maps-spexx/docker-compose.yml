@@ -8,7 +8,7 @@ services:
     container_name: maps-spexx
     restart: unless-stopped
     ports:
-      - "3013:80"
+      - "127.0.0.1:3013:80"
     networks:
       - web
 
