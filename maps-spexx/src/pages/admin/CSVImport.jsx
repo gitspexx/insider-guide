@@ -2,6 +2,33 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
+// Verify emails via BulkEmailChecker edge function (non-blocking)
+async function verifyEmailsBatch(items) {
+  const BATCH = 50
+  for (let i = 0; i < items.length; i += BATCH) {
+    const batch = items.slice(i, i + BATCH)
+    const emails = batch.map((b) => b.email)
+    try {
+      const { data } = await supabase.functions.invoke('verify-email', {
+        body: { emails },
+      })
+      if (data?.results) {
+        for (const r of data.results) {
+          const biz = batch.find((b) => b.email === r.email)
+          if (biz) {
+            await supabase
+              .from('businesses')
+              .update({ email_verified: r.status, email_verified_at: new Date().toISOString() })
+              .eq('id', biz.id)
+          }
+        }
+      }
+    } catch {
+      // Non-blocking — don't fail import if verification fails
+    }
+  }
+}
+
 const SKIP_FILES = [
   'atlas obscura', 'cedula', 'dark tourism',
   'default list', 'favorite places', 'images',
@@ -227,8 +254,8 @@ export default function CSVImport() {
 
         const { data, error } = await supabase
           .from('businesses')
-          .insert(batch)
-          .select('id, name, google_maps_url')
+          .upsert(batch, { onConflict: 'google_maps_url,country_id', ignoreDuplicates: true })
+          .select('id, name, google_maps_url, email')
 
         if (error) throw error
         if (data) allInserted.push(...data)
@@ -238,7 +265,7 @@ export default function CSVImport() {
       const country = countries.find((c) => c.id === selectedCountry)
       const countryTag = country?.slug || 'unknown'
 
-      // Sync to CRM contacts table (use insert, not upsert — partial index breaks PostgREST upsert)
+      // Sync to CRM contacts table (upsert on external_id to prevent duplicates)
       const MAPS_PROJECT_ID = '11111111-1111-1111-1111-111111111111'
       const MAPS_PIPELINE_ID = 'aaaa1111-0000-0000-0000-000000000001'
       const countryName = country?.name || countryTag.charAt(0).toUpperCase() + countryTag.slice(1)
@@ -258,12 +285,20 @@ export default function CSVImport() {
 
         const { data: contactData, error: contactErr } = await supabase
           .from('contacts')
-          .insert(contactBatch)
+          .upsert(contactBatch, { onConflict: 'external_id', ignoreDuplicates: true })
           .select('id')
         if (!contactErr && contactData) {
           contactsSynced += contactData.length
           allContactIds.push(...contactData.map((c) => c.id))
         }
+      }
+
+      // Verify emails in background (non-blocking)
+      const emailsToVerify = allInserted
+        .filter((b) => b.email)
+        .map((b) => ({ id: b.id, email: b.email }))
+      if (emailsToVerify.length > 0) {
+        verifyEmailsBatch(emailsToVerify).catch(() => {})
       }
 
       // Create pipeline cards so contacts show in CRM pipeline view
