@@ -11,7 +11,7 @@ export default function LocationFilter({ locations, counts, active, onChange }) 
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => onChange('all')}
-        className={`px-4 py-1.5 text-xs uppercase tracking-widest border rounded-full transition-all cursor-pointer font-body flex items-center gap-2 ${
+        className={`px-4 py-1.5 text-xs uppercase tracking-widest border rounded-full transition-colors cursor-pointer font-body flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-blue-500 ${
           active === 'all'
             ? 'bg-gold/15 border-gold/40 text-gold shadow-[0_0_12px_rgba(200,155,60,0.15)]'
             : 'border-border text-text-dim hover:text-text-secondary hover:border-white/15'
@@ -28,7 +28,7 @@ export default function LocationFilter({ locations, counts, active, onChange }) 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onChange(loc)}
-          className={`px-4 py-1.5 text-xs uppercase tracking-widest border rounded-full transition-all cursor-pointer font-body flex items-center gap-2 ${
+          className={`px-4 py-1.5 text-xs uppercase tracking-widest border rounded-full transition-colors cursor-pointer font-body flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-blue-500 ${
             active === loc
               ? 'bg-gold/15 border-gold/40 text-gold shadow-[0_0_12px_rgba(200,155,60,0.15)]'
               : 'border-border text-text-dim hover:text-text-secondary hover:border-white/15'

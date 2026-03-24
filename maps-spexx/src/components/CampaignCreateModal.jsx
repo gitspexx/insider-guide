@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -20,6 +20,7 @@ const CHANNEL_COLORS = {
 
 export default function CampaignCreateModal({ onClose, onCreated, preSelectedBusinessIds, preSelectedCountryId }) {
   const navigate = useNavigate()
+  const id = useId()
   const [countries, setCountries] = useState([])
   const [emailAccounts, setEmailAccounts] = useState([])
   const [businesses, setBusinesses] = useState([])
@@ -66,6 +67,14 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
         }
       })
   }, [countryId])
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   function toggleSelect(id) {
     setSelectedIds((prev) => {
@@ -130,19 +139,21 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="bg-bg-card border border-border rounded-sm p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div role="dialog" aria-modal="true" className="bg-bg-card border border-border rounded-sm p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain">
         <h2 className="font-heading text-xl tracking-wider text-white mb-5">New Campaign</h2>
 
         <div className="flex flex-col gap-4">
           {/* Campaign Name */}
           <div>
-            <label className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Campaign Name</label>
+            <label htmlFor={`${id}-campaign-name`} className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Campaign Name</label>
             <input
+              id={`${id}-campaign-name`}
               type="text"
+              name="campaign-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Argentina Cafes - March 2026"
-              className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white placeholder:text-text-dim focus:border-gold/30 focus:outline-none"
+              className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white placeholder:text-text-dim focus:border-gold/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               autoFocus
             />
           </div>
@@ -150,11 +161,13 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
           {/* Country + Email Account */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Country</label>
+              <label htmlFor={`${id}-country`} className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Country</label>
               <select
+                id={`${id}-country`}
+                name="country"
                 value={countryId}
                 onChange={(e) => { setCountryId(e.target.value); setSelectedIds(new Set()) }}
-                className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
+                className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <option value="">Select country...</option>
                 {countries.map((c) => (
@@ -163,11 +176,13 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
               </select>
             </div>
             <div>
-              <label className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Email Account</label>
+              <label htmlFor={`${id}-email-account`} className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-1">Email Account</label>
               <select
+                id={`${id}-email-account`}
+                name="email-account"
                 value={emailAccountId}
                 onChange={(e) => setEmailAccountId(e.target.value)}
-                className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus:outline-none"
+                className="w-full bg-bg border border-border rounded-sm px-4 py-3 text-sm text-white focus:border-gold/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 {emailAccounts.length === 0 && <option value="">No accounts configured</option>}
                 {emailAccounts.map((a) => (
@@ -179,18 +194,19 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
 
           {/* Sequence Config */}
           <div>
-            <label className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-2">Sequence (delay in days between steps)</label>
-            <div className="grid grid-cols-7 gap-2">
+            <label htmlFor={`${id}-sequence`} className="text-[9px] uppercase tracking-[0.3em] text-text-dim block mb-2">Sequence (delay in days between steps)</label>
+            <div id={`${id}-sequence`} className="grid grid-cols-7 gap-2">
               {sequence.map((s, i) => (
                 <div key={s.step} className="text-center">
                   <span className={`text-[10px] font-heading block mb-1 ${CHANNEL_COLORS[s.channel]}`}>{s.step}</span>
                   <input
                     type="number"
+                    name={`sequence-delay-${s.step}`}
                     min="0"
                     max="30"
                     value={s.delay_days}
                     onChange={(e) => updateDelay(i, e.target.value)}
-                    className="w-full bg-bg border border-border rounded-sm px-2 py-1.5 text-xs text-center text-white focus:border-gold/30 focus:outline-none"
+                    className="w-full bg-bg border border-border rounded-sm px-2 py-1.5 text-xs text-center text-white focus:border-gold/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   />
                 </div>
               ))}
@@ -219,7 +235,7 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
               </div>
             ) : loadingBiz ? (
               <div className="bg-bg border border-border rounded-sm px-4 py-6 text-center text-text-dim text-sm">
-                Loading...
+                Loading\u2026
               </div>
             ) : businesses.length === 0 ? (
               <div className="bg-bg border border-border rounded-sm px-4 py-6 text-center text-text-dim text-sm">
@@ -253,14 +269,14 @@ export default function CampaignCreateModal({ onClose, onCreated, preSelectedBus
             <button
               onClick={handleCreate}
               disabled={!name.trim() || !countryId || !emailAccountId || selectedIds.size === 0 || creating}
-              className="flex-1 bg-gold text-bg font-heading text-sm uppercase tracking-wider py-3 rounded-sm hover:bg-gold/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 bg-gold text-bg font-heading text-sm uppercase tracking-wider py-3 rounded-sm hover:bg-gold/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               {creating ? 'Creating...' : `Create & Preview (${selectedIds.size})`}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-border text-text-dim text-sm uppercase tracking-wider py-3 rounded-sm hover:text-text-secondary hover:border-white/15 cursor-pointer"
+              className="flex-1 border border-border text-text-dim text-sm uppercase tracking-wider py-3 rounded-sm hover:text-text-secondary hover:border-white/15 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               Cancel
             </button>

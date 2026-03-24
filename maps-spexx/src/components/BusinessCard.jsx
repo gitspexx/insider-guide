@@ -32,7 +32,7 @@ export default function BusinessCard({ business, index = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.04, ease: 'easeOut' }}
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className={`group relative bg-bg-card border rounded-sm p-5 transition-all duration-300 overflow-hidden ${
+      className={`group relative bg-bg-card border rounded-sm p-5 transition-colors transition-shadow duration-300 overflow-hidden ${
         isPartner
           ? 'border-gold/40 col-span-full md:col-span-2 hover:shadow-[0_4px_30px_rgba(200,155,60,0.15)]'
           : isFeatured
@@ -89,7 +89,7 @@ export default function BusinessCard({ business, index = 0 }) {
             href={business.google_maps_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] uppercase tracking-wider text-gold border border-gold/30 px-3 py-1.5 rounded-sm hover:bg-gold-faint hover:shadow-[0_0_8px_rgba(200,155,60,0.1)] transition-all"
+            className="text-[10px] uppercase tracking-wider text-gold border border-gold/30 px-3 py-1.5 rounded-sm hover:bg-gold-faint hover:shadow-[0_0_8px_rgba(200,155,60,0.1)] transition-colors transition-shadow focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             Maps
           </a>
@@ -99,7 +99,7 @@ export default function BusinessCard({ business, index = 0 }) {
             href={business.instagram_handle.startsWith('http') ? business.instagram_handle : `https://instagram.com/${business.instagram_handle.replace('@', '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] uppercase tracking-wider text-text-dim border border-border px-3 py-1.5 rounded-sm hover:text-text-secondary hover:border-white/15 transition-all"
+            className="text-[10px] uppercase tracking-wider text-text-dim border border-border px-3 py-1.5 rounded-sm hover:text-text-secondary hover:border-white/15 transition-colors transition-shadow focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             Instagram
           </a>

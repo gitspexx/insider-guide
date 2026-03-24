@@ -59,13 +59,16 @@ export default function EmailCapture({ countrySlug }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="flex-1 bg-bg border border-border rounded-sm px-3 py-2 text-xs text-white placeholder:text-text-dim focus:border-gold/30 focus:shadow-[0_0_12px_rgba(200,155,60,0.08)] focus:outline-none transition-all font-body"
+            aria-label="Email address"
+            name="email"
+            autoComplete="email"
+            className="flex-1 bg-bg border border-border rounded-sm px-3 py-2 text-xs text-white placeholder:text-text-dim focus:border-gold/30 focus:shadow-[0_0_12px_rgba(200,155,60,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors font-body"
           />
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
-            className="bg-gold text-bg text-[10px] uppercase tracking-wider font-bold px-4 py-2 rounded-sm hover:bg-gold/90 hover:shadow-[0_0_16px_rgba(200,155,60,0.2)] transition-all cursor-pointer font-heading"
+            className="bg-gold text-bg text-[10px] uppercase tracking-wider font-bold px-4 py-2 rounded-sm hover:bg-gold/90 hover:shadow-[0_0_16px_rgba(200,155,60,0.2)] transition-colors cursor-pointer font-heading focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             Subscribe
           </motion.button>

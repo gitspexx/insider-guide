@@ -1,6 +1,15 @@
+import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function PaywallModal({ country, onClose }) {
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <AnimatePresence>
       <motion.div
@@ -11,19 +20,22 @@ export default function PaywallModal({ country, onClose }) {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="relative bg-bg-card border border-border rounded-sm max-w-md w-full p-8 overflow-hidden"
+          className="relative bg-bg-card border border-border rounded-sm max-w-md w-full p-8 overflow-hidden overscroll-contain"
         >
           {/* Ambient glow */}
           <div className="absolute -top-16 -left-16 w-[200px] h-[200px] bg-gold/8 rounded-full blur-[80px] pointer-events-none" />
 
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-text-dim hover:text-white text-lg cursor-pointer transition-colors z-10"
+            aria-label="Close"
+            className="absolute top-4 right-4 text-text-dim hover:text-white text-lg cursor-pointer transition-colors z-10 focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             ×
           </button>
