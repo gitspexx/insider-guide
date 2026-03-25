@@ -12,6 +12,19 @@ services:
     networks:
       - web
 
+  maps-front:
+    build:
+      context: ../maps-front
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    container_name: maps-front
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3019:80"
+    networks:
+      - web
+
 networks:
   web:
     external: true
