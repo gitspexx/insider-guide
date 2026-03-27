@@ -1,0 +1,11 @@
+# All changes require review from Axel
+* @gitspexx
+
+# Extra protection on sensitive files
+Dockerfile @gitspexx
+docker-compose.yml @gitspexx
+docker-compose.yaml @gitspexx
+.env* @gitspexx
+**/auth.ts @gitspexx
+**/auth.js @gitspexx
+.github/ @gitspexx
