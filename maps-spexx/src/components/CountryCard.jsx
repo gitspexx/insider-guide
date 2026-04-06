@@ -12,7 +12,7 @@ const COUNTRY_GRADIENTS = {
 
 const DEFAULT_GRADIENT = 'from-stone-800/15 via-transparent to-stone-900/10'
 
-export default function CountryCard({ country, count, locked, onLockedClick, index = 0 }) {
+export default function CountryCard({ country, count, locked, onLockedClick, index = 0, comingSoon = false }) {
   const gradient = COUNTRY_GRADIENTS[country.slug] || DEFAULT_GRADIENT
 
   const cardContent = (
@@ -24,8 +24,10 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
       <div className="relative flex items-start justify-between mb-6">
         <span className="text-4xl leading-none">{country.flag_emoji}</span>
         {locked ? (
-          <span className="text-[10px] tracking-[0.15em] uppercase text-text-dim/60 border border-border px-2.5 py-1 rounded-full font-light">
-            Coming soon
+          <span className={`text-[10px] tracking-[0.15em] uppercase border px-2.5 py-1 rounded-full font-light ${
+            comingSoon ? 'text-text-dim/40 border-border/50' : 'text-accent/50 border-accent/20'
+          }`}>
+            {comingSoon ? 'Coming soon' : 'DM to unlock'}
           </span>
         ) : (
           <span className="text-[10px] tracking-[0.12em] uppercase text-accent/60 font-light">
