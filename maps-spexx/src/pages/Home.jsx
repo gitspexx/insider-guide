@@ -282,7 +282,7 @@ export default function Home() {
           <div className="flex items-center gap-3 mb-5">
             <span className="w-2 h-2 rounded-full bg-accent/40" />
             <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
-              Coming Soon &mdash; DM to Unlock
+              Coming Soon
             </span>
             <span className="text-[10px] text-text-dim/50">{filteredLocked.length}</span>
           </div>

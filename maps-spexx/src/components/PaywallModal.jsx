@@ -61,16 +61,16 @@ export default function PaywallModal({ country, onClose }) {
               {country?.name}
             </h2>
             <p className="font-editorial italic text-text-secondary text-[15px] mb-8">
-              Get the full curated Google Maps list
+              This guide is coming soon.
             </p>
 
-            {/* CTA Card */}
+            {/* Info Card */}
             <div className="border border-accent/15 rounded-xl p-5 bg-accent/[0.03] mb-5">
               <p className="text-[11px] text-accent tracking-[0.12em] uppercase font-medium mb-3">
-                Instant access via DM
+                Coming Soon
               </p>
-              <p className="text-[13px] text-text-secondary leading-relaxed font-light mb-4">
-                DM <span className="text-accent font-medium">&ldquo;{country?.slug?.toUpperCase()}&rdquo;</span> to{' '}
+              <p className="text-[13px] text-text-secondary leading-relaxed font-light">
+                We're curating the best places in {country?.name}. Follow{' '}
                 <a
                   href="https://www.instagram.com/alexspexx"
                   target="_blank"
@@ -79,21 +79,8 @@ export default function PaywallModal({ country, onClose }) {
                 >
                   @alexspexx
                 </a>{' '}
-                on Instagram and you'll receive the maps link automatically.
+                on Instagram to get notified when it drops.
               </p>
-              <a
-                href="https://instagram.com/alexspexx"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-accent text-bg text-[12px] tracking-[0.08em] uppercase font-medium px-5 py-2.5 rounded-xl hover:bg-accent/85 transition-all w-full justify-center"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-                Open Instagram
-              </a>
             </div>
 
             <p className="text-[11px] text-text-dim tracking-[0.1em] uppercase text-center font-light">
