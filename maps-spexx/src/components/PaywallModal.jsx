@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function PaywallModal({ country, onClose }) {
+export default function PaywallModal({ country, onClose, hasData = false }) {
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') onClose()
@@ -30,11 +30,9 @@ export default function PaywallModal({ country, onClose }) {
           onClick={(e) => e.stopPropagation()}
           className="relative bg-bg-card border border-border rounded-2xl max-w-md w-full overflow-hidden"
         >
-          {/* Ambient glow */}
           <div className="absolute -top-20 -left-20 w-[250px] h-[250px] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="relative p-8">
-            {/* Close button */}
             <button
               onClick={onClose}
               aria-label="Close"
@@ -46,7 +44,6 @@ export default function PaywallModal({ country, onClose }) {
               </svg>
             </button>
 
-            {/* Flag */}
             <motion.span
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -56,32 +53,72 @@ export default function PaywallModal({ country, onClose }) {
               {country?.flag_emoji}
             </motion.span>
 
-            {/* Title */}
             <h2 className="font-display text-3xl text-text mb-2 leading-tight">
               {country?.name}
             </h2>
-            <p className="font-editorial italic text-text-secondary text-[15px] mb-8">
-              This guide is coming soon.
-            </p>
 
-            {/* Info Card */}
-            <div className="border border-accent/15 rounded-xl p-5 bg-accent/[0.03] mb-5">
-              <p className="text-[11px] text-accent tracking-[0.12em] uppercase font-medium mb-3">
-                Coming Soon
-              </p>
-              <p className="text-[13px] text-text-secondary leading-relaxed font-light">
-                We're curating the best places in {country?.name}. Follow{' '}
-                <a
-                  href="https://www.instagram.com/alexspexx"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:text-accent/80 transition-colors underline underline-offset-2 decoration-accent/30"
-                >
-                  @alexspexx
-                </a>{' '}
-                on Instagram to get notified when it drops.
-              </p>
-            </div>
+            {hasData ? (
+              <>
+                <p className="font-editorial italic text-text-secondary text-[15px] mb-8">
+                  Get the full curated Google Maps list
+                </p>
+
+                <div className="border border-accent/15 rounded-xl p-5 bg-accent/[0.03] mb-5">
+                  <p className="text-[11px] text-accent tracking-[0.12em] uppercase font-medium mb-3">
+                    Unlock via DM
+                  </p>
+                  <p className="text-[13px] text-text-secondary leading-relaxed font-light mb-4">
+                    DM <span className="text-accent font-medium">&ldquo;{country?.slug?.toUpperCase()}&rdquo;</span> to{' '}
+                    <a
+                      href="https://www.instagram.com/alexspexx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:text-accent/80 transition-colors underline underline-offset-2 decoration-accent/30"
+                    >
+                      @alexspexx
+                    </a>{' '}
+                    on Instagram and you'll receive the maps link automatically.
+                  </p>
+                  <a
+                    href="https://instagram.com/alexspexx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-accent text-bg text-[12px] tracking-[0.08em] uppercase font-medium px-5 py-2.5 rounded-xl hover:bg-accent/85 transition-all w-full justify-center"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                    </svg>
+                    Open Instagram
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-editorial italic text-text-secondary text-[15px] mb-8">
+                  This guide is coming soon.
+                </p>
+
+                <div className="border border-border rounded-xl p-5 bg-bg-elevated/50 mb-5">
+                  <p className="text-[11px] text-text-dim tracking-[0.12em] uppercase font-medium mb-3">
+                    Coming Soon
+                  </p>
+                  <p className="text-[13px] text-text-secondary leading-relaxed font-light">
+                    We're curating the best places in {country?.name}. Follow{' '}
+                    <a
+                      href="https://www.instagram.com/alexspexx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:text-accent/80 transition-colors underline underline-offset-2 decoration-accent/30"
+                    >
+                      @alexspexx
+                    </a>{' '}
+                    on Instagram to get notified when it drops.
+                  </p>
+                </div>
+              </>
+            )}
 
             <p className="text-[11px] text-text-dim tracking-[0.1em] uppercase text-center font-light">
               Curated &middot; Honest placement &middot; Free

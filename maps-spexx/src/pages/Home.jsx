@@ -15,7 +15,6 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      // Fetch ALL countries (published and unpublished)
       const { data: countryData } = await supabase
         .from('countries')
         .select('*')
@@ -24,17 +23,25 @@ export default function Home() {
       if (countryData) {
         setAllCountries(countryData)
 
-        const { data: bizData } = await supabase
-          .from('businesses')
-          .select('country_id')
-
-        if (bizData) {
-          const map = {}
-          bizData.forEach((b) => {
-            map[b.country_id] = (map[b.country_id] || 0) + 1
-          })
-          setCounts(map)
+        // Paginate to get all businesses
+        let allBiz = []
+        let offset = 0
+        while (true) {
+          const { data } = await supabase
+            .from('businesses')
+            .select('country_id')
+            .range(offset, offset + 999)
+          if (!data || data.length === 0) break
+          allBiz = allBiz.concat(data)
+          if (data.length < 1000) break
+          offset += 1000
         }
+
+        const map = {}
+        allBiz.forEach((b) => {
+          map[b.country_id] = (map[b.country_id] || 0) + 1
+        })
+        setCounts(map)
       }
       setLoading(false)
     }
@@ -61,17 +68,20 @@ export default function Home() {
     }
   }, [])
 
-  // Published = open guides (clickable). Unpublished = DM paywall.
+  // 3 tiers:
+  // 1. Published = open guides (clickable, full access)
+  // 2. Unpublished + has businesses = scraped, DM paywall
+  // 3. Unpublished + 0 businesses = not scraped, Coming Soon
   const openCountries = allCountries.filter((c) => c.published)
-  const lockedCountries = allCountries.filter((c) => !c.published)
+  const scrapedCountries = allCountries.filter((c) => !c.published && counts[c.id] > 0)
+  const comingSoonCountries = allCountries.filter((c) => !c.published && !counts[c.id])
 
-  // Check if user has DM access grant
   function hasAccess(slug) {
     const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
     return grants.includes(slug)
   }
 
-  // Get unique regions
+  // Regions
   const regions = [...new Set(allCountries.map((c) => c.region).filter(Boolean))]
     .sort((a, b) => {
       const ai = REGION_ORDER.indexOf(a)
@@ -80,16 +90,29 @@ export default function Home() {
     })
 
   // Filter by region
-  const filteredOpen = activeRegion === 'all'
-    ? openCountries
-    : openCountries.filter((c) => c.region === activeRegion)
+  function filterByRegion(list) {
+    return activeRegion === 'all' ? list : list.filter((c) => c.region === activeRegion)
+  }
 
-  const filteredLocked = activeRegion === 'all'
-    ? lockedCountries
-    : lockedCountries.filter((c) => c.region === activeRegion)
+  // Group a list by region
+  function groupByRegion(list) {
+    const groups = {}
+    list.forEach((c) => {
+      const r = c.region || 'Other'
+      if (!groups[r]) groups[r] = []
+      groups[r].push(c)
+    })
+    return Object.entries(groups).sort((a, b) => {
+      const ai = REGION_ORDER.indexOf(a[0])
+      const bi = REGION_ORDER.indexOf(b[0])
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    })
+  }
 
-  // Stats
   const totalPlaces = Object.values(counts).reduce((s, c) => s + c, 0)
+  const filteredOpen = filterByRegion(openCountries)
+  const filteredScraped = filterByRegion(scrapedCountries)
+  const filteredComingSoon = filterByRegion(comingSoonCountries)
 
   if (loading) {
     return (
@@ -135,7 +158,6 @@ export default function Home() {
 
         <div className="max-w-[1120px] mx-auto px-6 py-12 md:py-16 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left: copy */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -154,7 +176,6 @@ export default function Home() {
                 The world, curated by someone who's actually been there.
               </p>
 
-              {/* Stats row */}
               <div className="flex items-center gap-6 pt-5 border-t border-border">
                 <div>
                   <span className="font-display text-2xl text-text">{allCountries.length}</span>
@@ -162,7 +183,7 @@ export default function Home() {
                 </div>
                 <div className="w-[1px] h-8 bg-border" />
                 <div>
-                  <span className="font-display text-2xl text-text">{totalPlaces}</span>
+                  <span className="font-display text-2xl text-text">{totalPlaces.toLocaleString()}</span>
                   <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Curated Places</span>
                 </div>
                 <div className="w-[1px] h-8 bg-border" />
@@ -173,7 +194,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Right: video showcase */}
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -181,14 +201,7 @@ export default function Home() {
               className="relative"
             >
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border bg-bg-card">
-                <video
-                  src="/hero-reel.mp4"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                <video src="/hero-reel.mp4" autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-60 pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-r from-bg/30 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
@@ -205,21 +218,9 @@ export default function Home() {
         <div className="shimmer-line max-w-[1120px] mx-auto" />
       </section>
 
-      {/* ─── Region Filter Tabs ─── */}
+      {/* ─── Region Filter ─── */}
       <section className="max-w-[1120px] mx-auto px-6 pt-12 pb-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="flex items-center gap-5 mb-6"
-        >
-          <span className="text-[11px] tracking-[0.15em] uppercase text-text-dim font-light">
-            Explore by Region
-          </span>
-          <div className="flex-1 gradient-divider" />
-        </motion.div>
-
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setActiveRegion('all')}
             className={`px-3.5 py-2 text-[11px] tracking-[0.1em] uppercase border rounded-lg transition-all duration-300 cursor-pointer font-light focus-visible:outline-none ${
@@ -249,9 +250,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Open Guides ─── */}
+      {/* ─── 1. Open Guides ─── */}
       {filteredOpen.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pb-8">
+        <section className="max-w-[1120px] mx-auto px-6 pt-8 pb-6">
           <div className="flex items-center gap-3 mb-5">
             <span className="w-2 h-2 rounded-full bg-green-500/60" />
             <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
@@ -274,31 +275,106 @@ export default function Home() {
         </section>
       )}
 
-      {/* ─── Coming Soon / DM to unlock ─── */}
-      {filteredLocked.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pb-16">
-          {filteredOpen.length > 0 && <div className="gradient-divider mb-8" />}
-
+      {/* ─── 2. Scraped — DM Paywall ─── */}
+      {filteredScraped.length > 0 && (
+        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-6">
+          <div className="gradient-divider mb-8" />
           <div className="flex items-center gap-3 mb-5">
-            <span className="w-2 h-2 rounded-full bg-accent/40" />
+            <span className="w-2 h-2 rounded-full bg-accent/50" />
             <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              DM to Unlock
+            </span>
+            <span className="text-[10px] text-text-dim/50">{filteredScraped.length}</span>
+          </div>
+
+          {activeRegion === 'all' ? (
+            // Group by region
+            groupByRegion(filteredScraped).map(([region, countries]) => (
+              <div key={region} className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/60 font-light">{region}</span>
+                  <div className="flex-1 h-px bg-border/50" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {countries.map((country, index) => (
+                    <CountryCard
+                      key={country.id}
+                      country={country}
+                      count={counts[country.id] || 0}
+                      locked={!hasAccess(country.slug)}
+                      onLockedClick={() => setPaywallCountry(country)}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredScraped.map((country, index) => (
+                <CountryCard
+                  key={country.id}
+                  country={country}
+                  count={counts[country.id] || 0}
+                  locked={!hasAccess(country.slug)}
+                  onLockedClick={() => setPaywallCountry(country)}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ─── 3. Coming Soon ─── */}
+      {filteredComingSoon.length > 0 && (
+        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-16">
+          <div className="gradient-divider mb-8" />
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-2 h-2 rounded-full bg-text-dim/30" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-dim font-light">
               Coming Soon
             </span>
-            <span className="text-[10px] text-text-dim/50">{filteredLocked.length}</span>
+            <span className="text-[10px] text-text-dim/50">{filteredComingSoon.length}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredLocked.map((country, index) => (
-              <CountryCard
-                key={country.id}
-                country={country}
-                count={counts[country.id] || 0}
-                locked={!hasAccess(country.slug)}
-                onLockedClick={() => setPaywallCountry(country)}
-                index={index}
-              />
-            ))}
-          </div>
+          {activeRegion === 'all' ? (
+            groupByRegion(filteredComingSoon).map(([region, countries]) => (
+              <div key={region} className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/60 font-light">{region}</span>
+                  <div className="flex-1 h-px bg-border/50" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {countries.map((country, index) => (
+                    <CountryCard
+                      key={country.id}
+                      country={country}
+                      count={0}
+                      locked={true}
+                      onLockedClick={() => setPaywallCountry(country)}
+                      index={index}
+                      comingSoon
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredComingSoon.map((country, index) => (
+                <CountryCard
+                  key={country.id}
+                  country={country}
+                  count={0}
+                  locked={true}
+                  onLockedClick={() => setPaywallCountry(country)}
+                  index={index}
+                  comingSoon
+                />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -327,6 +403,7 @@ export default function Home() {
         <PaywallModal
           country={paywallCountry}
           onClose={() => setPaywallCountry(null)}
+          hasData={!!counts[paywallCountry.id]}
         />
       )}
     </div>
