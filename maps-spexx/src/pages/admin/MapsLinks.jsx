@@ -4,13 +4,17 @@ import { supabase } from '../../lib/supabase'
 import { classifyMiscBusinesses } from '../../lib/classifier'
 
 const REGION_ORDER = ['South America', 'Central America', 'Caribbean', 'Europe', 'Asia', 'Middle East', 'Africa']
+const VPS_API = 'http://161.97.77.80:8899'
+const VPS_KEY = 'spexx-botsol-2026'
 
 export default function MapsLinks() {
   const [countries, setCountries] = useState([])
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(null) // country id being synced
+  const [syncing, setSyncing] = useState(null)
+  const [scraping, setScraping] = useState(null)
   const [syncResult, setSyncResult] = useState({})
   const [bizCounts, setBizCounts] = useState({})
+  const [vpsStatus, setVpsStatus] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -20,17 +24,39 @@ export default function MapsLinks() {
         .order('name')
       setCountries(countryData || [])
 
-      // Get business counts per country
-      const { data: bizData } = await supabase
-        .from('businesses')
-        .select('country_id')
+      // Get business counts (paginated)
+      let allBiz = []
+      let offset = 0
+      while (true) {
+        const { data } = await supabase
+          .from('businesses')
+          .select('country_id')
+          .range(offset, offset + 999)
+        if (!data || data.length === 0) break
+        allBiz = allBiz.concat(data)
+        if (data.length < 1000) break
+        offset += 1000
+      }
       const counts = {}
-      ;(bizData || []).forEach(b => { counts[b.country_id] = (counts[b.country_id] || 0) + 1 })
+      allBiz.forEach(b => { counts[b.country_id] = (counts[b.country_id] || 0) + 1 })
       setBizCounts(counts)
       setLoading(false)
     }
     load()
+    fetchVpsStatus()
   }, [])
+
+  async function fetchVpsStatus() {
+    try {
+      const res = await fetch(`${VPS_API}/status`, {
+        headers: { 'X-Api-Key': VPS_KEY },
+      })
+      if (res.ok) setVpsStatus(await res.json())
+      else setVpsStatus({ error: 'offline' })
+    } catch {
+      setVpsStatus({ error: 'unreachable' })
+    }
+  }
 
   async function handleUpdateLink(id, link) {
     await supabase.from('countries').update({ maps_link: link }).eq('id', id)
@@ -42,6 +68,7 @@ export default function MapsLinks() {
     setCountries(prev => prev.map(c => c.id === id ? { ...c, published } : c))
   }
 
+  // ─── Apify Sync (existing — uses Maps list link) ───
   async function handleSync(country) {
     if (!country.maps_link || syncing) return
     setSyncing(country.id)
@@ -65,7 +92,6 @@ export default function MapsLinks() {
       if (!res.ok) throw new Error(`Scrape failed (${res.status})`)
       const { places } = await res.json()
 
-      // Get existing for this country
       const { data: existing } = await supabase
         .from('businesses')
         .select('name, google_maps_url')
@@ -78,13 +104,10 @@ export default function MapsLinks() {
         const url = (p.google_maps_url || p.url || '').toLowerCase().trim()
         const name = (p.title || p.name || '').toLowerCase().trim()
         if (!name || name.length < 2) return false
-        if (url && existUrls.has(url)) return false
-        if (name && existNames.has(name)) return false
-        return true
+        return !(url && existUrls.has(url)) && !(name && existNames.has(name))
       })
 
       if (newPlaces.length > 0) {
-        // Import with auto-classification
         for (let i = 0; i < newPlaces.length; i += 10) {
           const batch = newPlaces.slice(i, i + 10)
           const inserts = batch.map(p => {
@@ -92,22 +115,18 @@ export default function MapsLinks() {
             const biz = { name, country_id: country.id, city: p.city || '' }
             const result = classifyMiscBusinesses([{ ...biz, category: 'misc' }])[0]
             return {
-              name,
-              country_id: country.id,
+              name, country_id: country.id,
               category: result?.suggestion?.category || 'misc',
-              location: p.address || '',
-              city: p.city || '',
+              location: p.address || '', city: p.city || '',
               google_maps_url: p.google_maps_url || p.url || '',
-              website: p.website || '',
-              tier: 'listed',
-              published: true,
+              website: p.website || '', tier: 'listed', published: true,
             }
           })
           await supabase.from('businesses').insert(inserts)
         }
       }
 
-      // Run classifier on any misc that remain
+      // Classify remaining misc
       const { data: miscBiz } = await supabase
         .from('businesses')
         .select('id, name, category, description, location, city')
@@ -116,30 +135,49 @@ export default function MapsLinks() {
       if (miscBiz && miscBiz.length > 0) {
         const classified = classifyMiscBusinesses(miscBiz)
         for (const { business, suggestion } of classified) {
-          if (suggestion) {
-            await supabase.from('businesses').update({ category: suggestion.category }).eq('id', business.id)
-          }
+          if (suggestion) await supabase.from('businesses').update({ category: suggestion.category }).eq('id', business.id)
         }
       }
 
       // Update counts
-      const { data: updatedBiz } = await supabase
-        .from('businesses')
-        .select('country_id')
-        .eq('country_id', country.id)
+      const { data: updatedBiz } = await supabase.from('businesses').select('country_id').eq('country_id', country.id)
       setBizCounts(prev => ({ ...prev, [country.id]: updatedBiz?.length || 0 }))
+
+      setSyncResult(prev => ({ ...prev, [country.id]: { ok: true, scraped: places.length, new: newPlaces.length } }))
+    } catch (err) {
+      setSyncResult(prev => ({ ...prev, [country.id]: { ok: false, error: err.message } }))
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // ─── Botsol Deep Scrape (VPS — full keyword expansion) ───
+  async function handleDeepScrape(country) {
+    if (scraping) return
+    setScraping(country.id)
+    setSyncResult(prev => ({ ...prev, [country.id]: null }))
+
+    try {
+      const res = await fetch(`${VPS_API}/scrape`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Api-Key': VPS_KEY },
+        body: JSON.stringify({ country: country.slug }),
+      })
+
+      if (!res.ok) throw new Error(`VPS error (${res.status})`)
+      const data = await res.json()
 
       setSyncResult(prev => ({
         ...prev,
-        [country.id]: { ok: true, scraped: places.length, new: newPlaces.length }
+        [country.id]: { ok: true, message: data.message || `Scrape queued for ${country.name}` }
       }))
     } catch (err) {
       setSyncResult(prev => ({
         ...prev,
-        [country.id]: { ok: false, error: err.message }
+        [country.id]: { ok: false, error: `VPS: ${err.message}` }
       }))
     } finally {
-      setSyncing(null)
+      setScraping(null)
     }
   }
 
@@ -155,6 +193,8 @@ export default function MapsLinks() {
     const bi = REGION_ORDER.indexOf(b)
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
   })
+
+  const vpsOnline = vpsStatus && !vpsStatus.error
 
   if (loading) {
     return (
@@ -179,18 +219,66 @@ export default function MapsLinks() {
               </span>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[9px] text-text-dim uppercase tracking-wider block">
-              {countries.filter(c => c.published).length} published · {countries.filter(c => c.maps_link).length} with maps
-            </span>
+          <div className="flex items-center gap-4">
+            {/* VPS Status indicator */}
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${vpsOnline ? 'bg-green-500' : 'bg-red-500/50'}`} />
+              <span className="text-[9px] text-text-dim uppercase tracking-wider">
+                Botsol VPS {vpsOnline ? 'Online' : 'Offline'}
+              </span>
+              {vpsOnline && vpsStatus.current && vpsStatus.state !== 'idle' && (
+                <span className="text-[9px] text-gold">
+                  {vpsStatus.state}: {vpsStatus.current}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={fetchVpsStatus}
+              className="text-[9px] text-text-dim border border-border px-2 py-1 rounded cursor-pointer hover:border-gold/30 transition-colors"
+            >
+              Refresh
+            </button>
+            <div className="text-right">
+              <span className="text-[9px] text-text-dim uppercase tracking-wider block">
+                {countries.filter(c => c.published).length} published · {countries.filter(c => c.maps_link).length} with maps
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <p className="text-sm text-text-dim mb-8">
-          Google Maps links by country. Press <strong className="text-white">Sync</strong> to crawl new places from the maps list and auto-classify them.
+        <p className="text-sm text-text-dim mb-4">
+          <strong className="text-white">Sync</strong> = Apify (fast, costs CU, uses your Maps list link).
+          <strong className="text-white ml-2">Scrape</strong> = Botsol VPS (free, deep keyword search, runs overnight).
         </p>
+
+        {/* Bulk actions */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={async () => {
+              const unscraped = countries.filter(c => !bizCounts[c.id] && c.slug)
+              if (!unscraped.length) return
+              try {
+                const res = await fetch(`${VPS_API}/queue`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'X-Api-Key': VPS_KEY },
+                  body: JSON.stringify({ countries: unscraped.map(c => c.slug) }),
+                })
+                if (res.ok) {
+                  const data = await res.json()
+                  alert(`Queued ${data.queue.length} countries for deep scrape`)
+                }
+              } catch {
+                alert('VPS unreachable')
+              }
+            }}
+            disabled={!vpsOnline}
+            className="text-[10px] uppercase tracking-wider px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm cursor-pointer disabled:opacity-30 transition-colors"
+          >
+            Queue All Unscraped
+          </button>
+        </div>
 
         {sortedRegions.map(region => (
           <div key={region} className="mb-8">
@@ -204,6 +292,7 @@ export default function MapsLinks() {
               {byRegion[region].map(country => {
                 const result = syncResult[country.id]
                 const isSyncing = syncing === country.id
+                const isScraping = scraping === country.id
                 const count = bizCounts[country.id] || 0
 
                 return (
@@ -212,7 +301,7 @@ export default function MapsLinks() {
                     className="rounded-lg p-4"
                     style={{ background: 'var(--color-bg-card, #13110F)', border: '1px solid var(--color-border, rgba(237,232,223,0.07))' }}
                   >
-                    {/* Top row: flag + name + stats */}
+                    {/* Top row */}
                     <div className="flex items-center gap-3 mb-3">
                       <span className="text-xl">{country.flag_emoji}</span>
                       <div className="flex-1 min-w-0">
@@ -241,7 +330,7 @@ export default function MapsLinks() {
                       </div>
                     </div>
 
-                    {/* Maps link input row */}
+                    {/* Maps link + action buttons */}
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] text-text-dim font-medium shrink-0 w-14">Maps Link</span>
                       <input
@@ -274,9 +363,17 @@ export default function MapsLinks() {
                           </button>
                         </>
                       )}
+                      <button
+                        onClick={() => handleDeepScrape(country)}
+                        disabled={isScraping || !vpsOnline}
+                        className="text-[9px] font-bold bg-blue-600 text-white px-3 py-2 rounded-md cursor-pointer disabled:opacity-40 disabled:cursor-wait transition-colors shrink-0"
+                        title="Deep scrape via Botsol VPS (free, runs overnight)"
+                      >
+                        {isScraping ? 'Queued...' : 'Scrape'}
+                      </button>
                     </div>
 
-                    {/* Sync result */}
+                    {/* Result */}
                     {result && (
                       <div className={`mt-2 text-[10px] px-3 py-1.5 rounded ${
                         result.ok
@@ -284,7 +381,7 @@ export default function MapsLinks() {
                           : 'bg-red-900/30 text-red-300'
                       }`}>
                         {result.ok
-                          ? `Scraped ${result.scraped} places → ${result.new} new imported`
+                          ? result.message || `Scraped ${result.scraped} places → ${result.new} new imported`
                           : `Error: ${result.error}`
                         }
                       </div>
