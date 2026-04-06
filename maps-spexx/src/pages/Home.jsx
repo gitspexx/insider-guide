@@ -4,35 +4,29 @@ import { supabase } from '../lib/supabase'
 import CountryCard from '../components/CountryCard'
 import PaywallModal from '../components/PaywallModal'
 
+const REGION_ORDER = ['South America', 'Central America', 'Caribbean', 'Europe', 'Asia', 'Middle East', 'Africa']
+
 export default function Home() {
-  const [countries, setCountries] = useState([])
+  const [allCountries, setAllCountries] = useState([])
   const [counts, setCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [paywallCountry, setPaywallCountry] = useState(null)
+  const [activeRegion, setActiveRegion] = useState('all')
 
   useEffect(() => {
     async function load() {
+      // Fetch ALL countries (published and unpublished)
       const { data: countryData } = await supabase
         .from('countries')
         .select('*')
-        .eq('published', true)
         .order('name')
 
       if (countryData) {
-        const ORDER = ['colombia', 'brazil', 'guatemala']
-        const sorted = countryData
-          .filter((c) => c.slug !== 'argentina')
-          .sort((a, b) => {
-            const ai = ORDER.indexOf(a.slug)
-            const bi = ORDER.indexOf(b.slug)
-            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-          })
-        setCountries(sorted)
+        setAllCountries(countryData)
 
         const { data: bizData } = await supabase
           .from('businesses')
           .select('country_id')
-          .eq('published', true)
 
         if (bizData) {
           const map = {}
@@ -67,12 +61,35 @@ export default function Home() {
     }
   }, [])
 
-  function isUnlocked(slug) {
-    // Only Dominican Republic is locked behind DM paywall
-    if (slug !== 'dominican-republic') return true
+  // Published = open guides (clickable). Unpublished = DM paywall.
+  const openCountries = allCountries.filter((c) => c.published)
+  const lockedCountries = allCountries.filter((c) => !c.published)
+
+  // Check if user has DM access grant
+  function hasAccess(slug) {
     const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
     return grants.includes(slug)
   }
+
+  // Get unique regions
+  const regions = [...new Set(allCountries.map((c) => c.region).filter(Boolean))]
+    .sort((a, b) => {
+      const ai = REGION_ORDER.indexOf(a)
+      const bi = REGION_ORDER.indexOf(b)
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    })
+
+  // Filter by region
+  const filteredOpen = activeRegion === 'all'
+    ? openCountries
+    : openCountries.filter((c) => c.region === activeRegion)
+
+  const filteredLocked = activeRegion === 'all'
+    ? lockedCountries
+    : lockedCountries.filter((c) => c.region === activeRegion)
+
+  // Stats
+  const totalPlaces = Object.values(counts).reduce((s, c) => s + c, 0)
 
   if (loading) {
     return (
@@ -140,20 +157,18 @@ export default function Home() {
               {/* Stats row */}
               <div className="flex items-center gap-6 pt-5 border-t border-border">
                 <div>
-                  <span className="font-display text-2xl text-text">{countries.length}</span>
+                  <span className="font-display text-2xl text-text">{allCountries.length}</span>
                   <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Countries</span>
                 </div>
                 <div className="w-[1px] h-8 bg-border" />
                 <div>
-                  <span className="font-display text-2xl text-text">
-                    {Object.values(counts).reduce((s, c) => s + c, 0)}
-                  </span>
+                  <span className="font-display text-2xl text-text">{totalPlaces}</span>
                   <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Curated Places</span>
                 </div>
                 <div className="w-[1px] h-8 bg-border" />
                 <div>
-                  <span className="font-display text-2xl text-text">8</span>
-                  <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Categories</span>
+                  <span className="font-display text-2xl text-text">{regions.length}</span>
+                  <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Regions</span>
                 </div>
               </div>
             </motion.div>
@@ -166,7 +181,6 @@ export default function Home() {
               className="relative"
             >
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border bg-bg-card">
-                {/* Video element — drop hero-reel.mp4 in public/ */}
                 <video
                   src="/hero-reel.mp4"
                   autoPlay
@@ -175,18 +189,12 @@ export default function Home() {
                   playsInline
                   className="absolute inset-0 w-full h-full object-cover"
                 />
-
-                {/* Gradient overlays for blending */}
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-60 pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-r from-bg/30 via-transparent to-transparent pointer-events-none" />
-
-                {/* Bottom overlay text */}
                 <div className="absolute bottom-0 left-0 right-0 p-5">
                   <span className="text-[10px] tracking-[0.15em] uppercase text-accent/70 font-light block mb-1">Now exploring</span>
                   <span className="font-display text-xl text-text">South America</span>
                 </div>
-
-                {/* Subtle corner accents */}
                 <div className="absolute top-4 right-4 w-8 h-8 border-t border-r border-accent/20 rounded-tr-lg pointer-events-none" />
                 <div className="absolute bottom-4 left-4 w-8 h-8 border-b border-l border-accent/20 rounded-bl-lg pointer-events-none" />
               </div>
@@ -197,33 +205,102 @@ export default function Home() {
         <div className="shimmer-line max-w-[1120px] mx-auto" />
       </section>
 
-      {/* ─── Country Grid ─── */}
-      <section className="max-w-[1120px] mx-auto px-6 py-20">
+      {/* ─── Region Filter Tabs ─── */}
+      <section className="max-w-[1120px] mx-auto px-6 pt-12 pb-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="flex items-center gap-5 mb-12"
+          className="flex items-center gap-5 mb-6"
         >
           <span className="text-[11px] tracking-[0.15em] uppercase text-text-dim font-light">
-            Available Guides
+            Explore by Region
           </span>
           <div className="flex-1 gradient-divider" />
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {countries.map((country, index) => (
-            <CountryCard
-              key={country.id}
-              country={country}
-              count={counts[country.id] || 0}
-              locked={!isUnlocked(country.slug)}
-              onLockedClick={() => setPaywallCountry(country)}
-              index={index}
-            />
-          ))}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <button
+            onClick={() => setActiveRegion('all')}
+            className={`px-3.5 py-2 text-[11px] tracking-[0.1em] uppercase border rounded-lg transition-all duration-300 cursor-pointer font-light focus-visible:outline-none ${
+              activeRegion === 'all'
+                ? 'bg-accent/10 border-accent/25 text-accent'
+                : 'border-border text-text-dim hover:text-text-secondary hover:border-border-hover hover:bg-bg-elevated'
+            }`}
+          >
+            All ({allCountries.length})
+          </button>
+          {regions.map((region) => {
+            const count = allCountries.filter((c) => c.region === region).length
+            return (
+              <button
+                key={region}
+                onClick={() => setActiveRegion(activeRegion === region ? 'all' : region)}
+                className={`px-3.5 py-2 text-[11px] tracking-[0.1em] uppercase border rounded-lg transition-all duration-300 cursor-pointer font-light focus-visible:outline-none ${
+                  activeRegion === region
+                    ? 'bg-accent/10 border-accent/25 text-accent'
+                    : 'border-border text-text-dim hover:text-text-secondary hover:border-border-hover hover:bg-bg-elevated'
+                }`}
+              >
+                {region} ({count})
+              </button>
+            )
+          })}
         </div>
       </section>
+
+      {/* ─── Open Guides ─── */}
+      {filteredOpen.length > 0 && (
+        <section className="max-w-[1120px] mx-auto px-6 pb-8">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-2 h-2 rounded-full bg-green-500/60" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              Available Guides
+            </span>
+            <span className="text-[10px] text-text-dim/50">{filteredOpen.length}</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredOpen.map((country, index) => (
+              <CountryCard
+                key={country.id}
+                country={country}
+                count={counts[country.id] || 0}
+                locked={false}
+                index={index}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─── Coming Soon / DM to unlock ─── */}
+      {filteredLocked.length > 0 && (
+        <section className="max-w-[1120px] mx-auto px-6 pb-16">
+          {filteredOpen.length > 0 && <div className="gradient-divider mb-8" />}
+
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-2 h-2 rounded-full bg-accent/40" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              Coming Soon &mdash; DM to Unlock
+            </span>
+            <span className="text-[10px] text-text-dim/50">{filteredLocked.length}</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredLocked.map((country, index) => (
+              <CountryCard
+                key={country.id}
+                country={country}
+                count={counts[country.id] || 0}
+                locked={!hasAccess(country.slug)}
+                onLockedClick={() => setPaywallCountry(country)}
+                index={index}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
