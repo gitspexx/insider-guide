@@ -93,6 +93,24 @@ export default function AdminDashboard() {
             >
               {syncing ? 'Syncing…' : '⟳ Notion Sync'}
             </button>
+            <Link
+              to="/admin/maps-links"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm transition-colors no-underline"
+            >
+              🗺 Maps Links
+            </Link>
+            <Link
+              to="/admin/maps-import"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm transition-colors no-underline"
+            >
+              🗺 Maps Import
+            </Link>
+            <Link
+              to="/admin/classifier"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm transition-colors no-underline"
+            >
+              ⚡ Classifier
+            </Link>
             <Link to="/admin/outreach" className="text-[10px] text-gold uppercase tracking-widest hover:text-gold/80">
               Outreach
             </Link>
