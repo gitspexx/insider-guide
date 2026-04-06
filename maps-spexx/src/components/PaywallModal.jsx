@@ -17,56 +17,89 @@ export default function PaywallModal({ country, onClose }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: 'rgba(11, 10, 8, 0.85)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       >
         <motion.div
           role="dialog"
           aria-modal="true"
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          exit={{ opacity: 0, scale: 0.95, y: 12 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="relative bg-bg-card border border-border rounded-sm max-w-md w-full p-8 overflow-hidden overscroll-contain"
+          className="relative bg-bg-card border border-border rounded-2xl max-w-md w-full overflow-hidden"
         >
           {/* Ambient glow */}
-          <div className="absolute -top-16 -left-16 w-[200px] h-[200px] bg-gold/8 rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute -top-20 -left-20 w-[250px] h-[250px] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute top-4 right-4 text-text-dim hover:text-white text-lg cursor-pointer transition-colors z-10 focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            ×
-          </button>
+          <div className="relative p-8">
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center text-text-dim hover:text-text rounded-full hover:bg-bg-hover transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/40"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
 
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-            className="text-4xl block mb-4 relative"
-          >
-            {country?.flag_emoji}
-          </motion.span>
-          <h2 className="font-heading text-3xl tracking-wide text-white mb-2 relative">
-            {country?.name}
-          </h2>
-          <p className="font-serif italic text-text-secondary text-sm mb-6 relative">
-            This guide is coming soon.
-          </p>
+            {/* Flag */}
+            <motion.span
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
+              className="text-5xl block mb-5"
+            >
+              {country?.flag_emoji}
+            </motion.span>
 
-          <div className="relative border border-gold/20 rounded-sm p-4 bg-gold-faint mb-4">
-            <p className="text-xs text-gold uppercase tracking-wider mb-2 font-bold">
-              Get early access
+            {/* Title */}
+            <h2 className="font-display text-3xl text-text mb-2 leading-tight">
+              {country?.name}
+            </h2>
+            <p className="font-editorial italic text-text-secondary text-[15px] mb-8">
+              Get the full curated Google Maps list
             </p>
-            <p className="text-xs text-text-secondary leading-relaxed">
-              DM <a href="https://www.instagram.com/alexspexx" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">@alexspexx</a> on Instagram with the country name to unlock this guide when it drops.
+
+            {/* CTA Card */}
+            <div className="border border-accent/15 rounded-xl p-5 bg-accent/[0.03] mb-5">
+              <p className="text-[11px] text-accent tracking-[0.12em] uppercase font-medium mb-3">
+                Instant access via DM
+              </p>
+              <p className="text-[13px] text-text-secondary leading-relaxed font-light mb-4">
+                DM <span className="text-accent font-medium">&ldquo;{country?.slug?.toUpperCase()}&rdquo;</span> to{' '}
+                <a
+                  href="https://www.instagram.com/alexspexx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:text-accent/80 transition-colors underline underline-offset-2 decoration-accent/30"
+                >
+                  @alexspexx
+                </a>{' '}
+                on Instagram and you'll receive the maps link automatically.
+              </p>
+              <a
+                href="https://instagram.com/alexspexx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-accent text-bg text-[12px] tracking-[0.08em] uppercase font-medium px-5 py-2.5 rounded-xl hover:bg-accent/85 transition-all w-full justify-center"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+                Open Instagram
+              </a>
+            </div>
+
+            <p className="text-[11px] text-text-dim tracking-[0.1em] uppercase text-center font-light">
+              Curated &middot; Honest placement &middot; Free
             </p>
           </div>
-
-          <p className="relative text-[10px] text-text-dim uppercase tracking-wider text-center">
-            Limited spots · Honest placement
-          </p>
         </motion.div>
       </motion.div>
     </AnimatePresence>

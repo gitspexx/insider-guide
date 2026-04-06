@@ -9,6 +9,9 @@ import AdminSubscribers from './pages/admin/Subscribers'
 import AdminOutreach from './pages/admin/OutreachDashboard'
 import AdminCampaignDetail from './pages/admin/CampaignDetail'
 import AdminCSVImport from './pages/admin/CSVImport'
+import AdminClassifier from './pages/admin/Classifier'
+import AdminMapsImport from './pages/admin/MapsImport'
+import AdminMapsLinks from './pages/admin/MapsLinks'
 import AdminRoute from './components/AdminRoute'
 
 export default function App() {
@@ -20,6 +23,9 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/import" element={<AdminRoute><AdminCSVImport /></AdminRoute>} />
+        <Route path="/admin/classifier" element={<AdminRoute><AdminClassifier /></AdminRoute>} />
+        <Route path="/admin/maps-import" element={<AdminRoute><AdminMapsImport /></AdminRoute>} />
+        <Route path="/admin/maps-links" element={<AdminRoute><AdminMapsLinks /></AdminRoute>} />
         <Route path="/admin/outreach" element={<AdminRoute><AdminOutreach /></AdminRoute>} />
         <Route path="/admin/outreach/:campaignId" element={<AdminRoute><AdminCampaignDetail /></AdminRoute>} />
         <Route path="/admin/subscribers" element={<AdminRoute><AdminSubscribers /></AdminRoute>} />

@@ -33,3 +33,6 @@ maps-spexx/src/
 2. **Admin routes protected** by AdminRoute component.
 3. **Public pages must be fast.** No unnecessary client-side fetches on initial load.
 4. **Check Obsidian vault** for Supabase keys and VPS credentials.
+
+## Brand Voice — Insider Guide / Maps
+Professional, warm, travel-industry savvy. Position as a curated platform, not a review site. Outreach to hotels/restaurants/tours: brief intro of platform, what's in it for them (exposure to travelers), clear CTA to join. Personalization mandatory — reference something specific about recipient.
