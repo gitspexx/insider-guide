@@ -60,6 +60,7 @@ export default function CampaignDetail() {
   async function notionSync(businessId, fields) {
     try {
       const session = await getSession()
+      if (!session) return
       fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notion-reverse-sync`,
         {
@@ -71,13 +72,15 @@ export default function CampaignDetail() {
           },
           body: JSON.stringify({ business_id: businessId, fields }),
         }
-      )
+      ).catch(() => {})
     } catch (_) { /* fire-and-forget */ }
   }
 
   async function generatePreviews() {
+    if (generating) return
     setGenerating(true)
     const session = await getSession()
+    if (!session) { setGenerating(false); return }
     const activeEnrollments = enrollments.filter((e) => e.status === 'active')
 
     for (const enr of activeEnrollments) {
@@ -130,8 +133,10 @@ export default function CampaignDetail() {
   }
 
   async function sendAll() {
+    if (sending) return
     setSending(true)
     const session = await getSession()
+    if (!session) { setSending(false); return }
 
     // Filter to email previews only (WA/IG are manual)
     const emailPreviews = Object.entries(previews).filter(

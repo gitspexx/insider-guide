@@ -44,14 +44,19 @@ export default function CountryGuide() {
 
   useEffect(() => {
     async function load() {
-      const { data: countryData } = await supabase
-        .from('countries')
-        .select('*')
-        .eq('slug', slug)
-        .eq('published', true)
-        .single()
+      try {
+        const { data: countryData, error: countryErr } = await supabase
+          .from('countries')
+          .select('*')
+          .eq('slug', slug)
+          .eq('published', true)
+          .single()
 
-      if (countryData) {
+        if (countryErr || !countryData) {
+          setLoading(false)
+          return
+        }
+
         setCountry(countryData)
         const { data: bizData } = await supabase
           .from('businesses')
@@ -60,8 +65,11 @@ export default function CountryGuide() {
           .eq('published', true)
           .order('name')
         setBusinesses(bizData || [])
+      } catch (err) {
+        console.error('CountryGuide load error:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [slug])
@@ -157,11 +165,13 @@ export default function CountryGuide() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="flex items-center gap-3 mb-5">
-              <span className="text-[11px] tracking-[0.2em] uppercase text-accent/50 font-light">
-                {country.coordinates}
-              </span>
-            </div>
+            {country.coordinates && (
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-[11px] tracking-[0.2em] uppercase text-accent/50 font-light">
+                  {country.coordinates}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-start gap-5 md:gap-6">
               <motion.span

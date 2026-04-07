@@ -4,8 +4,8 @@ import { supabase } from '../../lib/supabase'
 import { classifyMiscBusinesses } from '../../lib/classifier'
 
 const REGION_ORDER = ['South America', 'Central America', 'Caribbean', 'Europe', 'Asia', 'Middle East', 'Africa']
-const VPS_API = 'http://161.97.77.80:8899'
-const VPS_KEY = 'spexx-botsol-2026'
+const VPS_API = import.meta.env.VITE_VPS_API || 'http://161.97.77.80:8899'
+const VPS_KEY = import.meta.env.VITE_VPS_KEY || ''
 
 export default function MapsLinks() {
   const [countries, setCountries] = useState([])

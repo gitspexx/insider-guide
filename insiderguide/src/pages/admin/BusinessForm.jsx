@@ -89,13 +89,16 @@ export default function AdminBusinessForm() {
       last_touch_type: form.last_touch_type || null,
     }
 
-    if (isEditing) {
-      await supabase.from('businesses').update(payload).eq('id', id)
-    } else {
-      await supabase.from('businesses').insert(payload)
-    }
+    const { error } = isEditing
+      ? await supabase.from('businesses').update(payload).eq('id', id)
+      : await supabase.from('businesses').insert(payload)
 
     setSaving(false)
+
+    if (error) {
+      alert(`Save failed: ${error.message}`)
+      return
+    }
 
     // Navigate back to country CRM
     const country = countries.find((c) => c.id === form.country_id)

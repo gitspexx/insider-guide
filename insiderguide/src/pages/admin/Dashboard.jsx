@@ -41,7 +41,12 @@ export default function AdminDashboard() {
     setSyncing(true)
     setSyncResult(null)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: authError } = await supabase.auth.getSession()
+      if (authError || !session) {
+        setSyncResult({ ok: false, text: 'Not authenticated. Please log in again.' })
+        setSyncing(false)
+        return
+      }
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notion-sync`,
         {

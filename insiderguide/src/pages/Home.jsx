@@ -15,22 +15,29 @@ export default function Home() {
 
   useEffect(() => {
     async function load() {
-      const { data: countryData } = await supabase
-        .from('countries')
-        .select('*')
-        .order('name')
+      try {
+        const { data: countryData, error: countryError } = await supabase
+          .from('countries')
+          .select('*')
+          .order('name')
 
-      if (countryData) {
-        setAllCountries(countryData)
+        if (countryError) {
+          console.error('Failed to load countries:', countryError)
+          setLoading(false)
+          return
+        }
+
+        setAllCountries(countryData || [])
 
         // Paginate to get all businesses
         let allBiz = []
         let offset = 0
         while (true) {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('businesses')
             .select('country_id')
             .range(offset, offset + 999)
+          if (error) { console.error('Failed to load businesses:', error); break }
           if (!data || data.length === 0) break
           allBiz = allBiz.concat(data)
           if (data.length < 1000) break
@@ -42,8 +49,11 @@ export default function Home() {
           map[b.country_id] = (map[b.country_id] || 0) + 1
         })
         setCounts(map)
+      } catch (err) {
+        console.error('Home load error:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
     load()
   }, [])
@@ -57,12 +67,15 @@ export default function Home() {
       localStorage.setItem('session_token', token)
       const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
       if (!grants.includes(country)) {
-        grants.push(country)
-        localStorage.setItem('access_grants', JSON.stringify(grants))
         supabase.from('access_grants').insert({
           session_token: token,
           country_slug: country,
           source: 'social_link',
+        }).then(({ error }) => {
+          if (!error) {
+            grants.push(country)
+            localStorage.setItem('access_grants', JSON.stringify(grants))
+          }
         })
       }
     }

@@ -1,13 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function PaywallModal({ country, onClose, hasData = false }) {
+  const closeRef = useRef(null)
+
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    // Focus close button on mount
+    closeRef.current?.focus()
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
   }, [onClose])
 
   return (
@@ -23,6 +32,7 @@ export default function PaywallModal({ country, onClose, hasData = false }) {
         <motion.div
           role="dialog"
           aria-modal="true"
+          aria-label={`${country?.name || 'Country'} guide`}
           initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -34,6 +44,7 @@ export default function PaywallModal({ country, onClose, hasData = false }) {
 
           <div className="relative p-8">
             <button
+              ref={closeRef}
               onClick={onClose}
               aria-label="Close"
               className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center text-text-dim hover:text-text rounded-full hover:bg-bg-hover transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/40"

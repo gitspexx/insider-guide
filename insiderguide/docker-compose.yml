@@ -5,6 +5,8 @@ services:
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_VPS_API: ${VITE_VPS_API}
+        VITE_VPS_KEY: ${VITE_VPS_KEY}
     container_name: maps-spexx
     restart: unless-stopped
     ports:
