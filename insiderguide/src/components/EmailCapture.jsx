@@ -5,10 +5,12 @@ import { supabase } from '../lib/supabase'
 export default function EmailCapture({ countrySlug }) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!email) return
+    if (!email || submitting) return
+    setSubmitting(true)
 
     const { error } = await supabase
       .from('newsletter_subscribers')
@@ -24,6 +26,7 @@ export default function EmailCapture({ countrySlug }) {
       setStatus('success')
       setEmail('')
     }
+    setSubmitting(false)
   }
 
   return (
@@ -75,9 +78,10 @@ export default function EmailCapture({ countrySlug }) {
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   type="submit"
-                  className="bg-accent text-bg text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-2.5 rounded-lg hover:bg-accent/85 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/40"
+                  disabled={submitting}
+                  className="bg-accent text-bg text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-2.5 rounded-lg hover:bg-accent/85 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 disabled:cursor-wait"
                 >
-                  Subscribe
+                  {submitting ? 'Sending...' : 'Subscribe'}
                 </motion.button>
               </form>
             )}

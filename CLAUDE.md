@@ -6,9 +6,9 @@ Public-facing directory of travel-related businesses (restaurants, hotels, tours
 
 ## Commands
 ```bash
-cd maps-spexx && npm run dev      # Vite dev server
-cd maps-spexx && npm run build    # vite build (no tsc — JSX project)
-cd maps-spexx && npm run lint     # ESLint
+cd insiderguide && npm run dev      # Vite dev server
+cd insiderguide && npm run build    # vite build (no tsc — JSX project)
+cd insiderguide && npm run lint     # ESLint
 ```
 
 ## Stack

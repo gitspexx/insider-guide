@@ -112,7 +112,7 @@ export default function AdminCountry() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${slug}-businesses.csv`
+    a.download = `${(slug || 'export').replace(/[^a-z0-9_-]/gi, '_')}-businesses.csv`
     a.click()
     URL.revokeObjectURL(url)
   }

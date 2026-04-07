@@ -111,7 +111,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false })
               href={business.instagram_handle.startsWith('http') ? business.instagram_handle : `https://instagram.com/${business.instagram_handle.replace('@', '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-light text-text-dim border border-border px-3.5 py-2 rounded-lg hover:text-text-secondary hover:border-border-hover transition-all focus-visible:ring-2 focus-visible:ring-accent/40"
+              className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-medium text-text-dim border border-border px-3.5 py-2 rounded-lg hover:text-text-secondary hover:border-border-hover transition-all focus-visible:ring-2 focus-visible:ring-accent/40"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
