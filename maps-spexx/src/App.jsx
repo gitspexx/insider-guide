@@ -12,6 +12,7 @@ import AdminCSVImport from './pages/admin/CSVImport'
 import AdminClassifier from './pages/admin/Classifier'
 import AdminMapsImport from './pages/admin/MapsImport'
 import AdminMapsLinks from './pages/admin/MapsLinks'
+import AdminOpportunities from './pages/admin/Opportunities'
 import AdminRoute from './components/AdminRoute'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/admin/classifier" element={<AdminRoute><AdminClassifier /></AdminRoute>} />
         <Route path="/admin/maps-import" element={<AdminRoute><AdminMapsImport /></AdminRoute>} />
         <Route path="/admin/maps-links" element={<AdminRoute><AdminMapsLinks /></AdminRoute>} />
+        <Route path="/admin/opportunities" element={<AdminRoute><AdminOpportunities /></AdminRoute>} />
         <Route path="/admin/outreach" element={<AdminRoute><AdminOutreach /></AdminRoute>} />
         <Route path="/admin/outreach/:campaignId" element={<AdminRoute><AdminCampaignDetail /></AdminRoute>} />
         <Route path="/admin/subscribers" element={<AdminRoute><AdminSubscribers /></AdminRoute>} />

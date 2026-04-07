@@ -94,6 +94,12 @@ export default function AdminDashboard() {
               {syncing ? 'Syncing…' : '⟳ Notion Sync'}
             </button>
             <Link
+              to="/admin/opportunities"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-red-500/40 text-red-400 hover:bg-red-500/10 rounded-sm transition-colors no-underline"
+            >
+              Opportunities
+            </Link>
+            <Link
               to="/admin/maps-links"
               className="text-[10px] uppercase tracking-widest px-3 py-1.5 border border-gold/40 text-gold hover:bg-gold/10 rounded-sm transition-colors no-underline"
             >
