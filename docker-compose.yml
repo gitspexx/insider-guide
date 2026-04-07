@@ -1,0 +1,13 @@
+services:
+  maps-spexx:
+    build: .
+    container_name: maps-spexx
+    restart: unless-stopped
+    ports:
+      - "3013:80"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
