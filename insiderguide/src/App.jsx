@@ -13,6 +13,7 @@ import AdminClassifier from './pages/admin/Classifier'
 import AdminMapsImport from './pages/admin/MapsImport'
 import AdminMapsLinks from './pages/admin/MapsLinks'
 import AdminOpportunities from './pages/admin/Opportunities'
+import Partner from './pages/Partner'
 import AdminRoute from './components/AdminRoute'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
     <div className="grain min-h-screen">
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/partner" element={<Partner />} />
         <Route path="/:slug" element={<CountryGuide />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
