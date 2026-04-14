@@ -1,8 +1,9 @@
-# Maps Spexx — Travel Business Directory
+# Insider Guide — Travel Business Directory
 
 ## Project
 Public-facing directory of travel-related businesses (restaurants, hotels, tours, etc.) organized by country. Admin panel for managing listings, CSV imports, email campaigns, and subscriber outreach.
-**Supabase project:** `qbzmsvfphpfgnlztskma` | **Port:** 3013
+**URL:** https://insider-guide.spexx.cloud (maps.spexx.cloud redirects here)
+**Supabase project:** `qbzmsvfphpfgnlztskma` (shared with spexx-crm) | **Port:** 3013 (back), 3019 (front)
 
 ## Commands
 ```bash
@@ -19,7 +20,7 @@ cd insiderguide && npm run lint     # ESLint
 
 ## Architecture
 ```
-maps-spexx/src/
+insiderguide/src/
   components/     # BusinessCard, CategoryFilter, LocationFilter, PaywallModal,
                   # EmailCapture, CampaignCreateModal, AdminRoute
   lib/            # supabase.js
@@ -34,5 +35,5 @@ maps-spexx/src/
 3. **Public pages must be fast.** No unnecessary client-side fetches on initial load.
 4. **Check Obsidian vault** for Supabase keys and VPS credentials.
 
-## Brand Voice — Insider Guide / Maps
+## Brand Voice — Insider Guide
 Professional, warm, travel-industry savvy. Position as a curated platform, not a review site. Outreach to hotels/restaurants/tours: brief intro of platform, what's in it for them (exposure to travelers), clear CTA to join. Personalization mandatory — reference something specific about recipient.

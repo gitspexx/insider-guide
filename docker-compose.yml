@@ -1,7 +1,7 @@
 services:
-  maps-spexx:
+  insider-guide-back:
     build: .
-    container_name: maps-spexx
+    container_name: insider-guide-back
     restart: unless-stopped
     ports:
       - "3013:80"

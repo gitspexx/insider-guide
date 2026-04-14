@@ -1,5 +1,5 @@
 services:
-  maps-spexx:
+  insider-guide-back:
     build:
       context: .
       args:
@@ -7,20 +7,20 @@ services:
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
         VITE_VPS_API: ${VITE_VPS_API}
         VITE_VPS_KEY: ${VITE_VPS_KEY}
-    container_name: maps-spexx
+    container_name: insider-guide-back
     restart: unless-stopped
     ports:
       - "127.0.0.1:3013:80"
     networks:
       - web
 
-  maps-front:
+  insider-guide-front:
     build:
       context: ../maps-front
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
-    container_name: maps-front
+    container_name: insider-guide-front
     restart: unless-stopped
     ports:
       - "127.0.0.1:3019:80"
