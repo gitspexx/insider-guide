@@ -18,6 +18,7 @@ jobs:
           timeout: 120s
           command_timeout: 15m
           script: |
+            set -e
             cd /opt/maps-spexx
             git pull origin main
             cd insiderguide
@@ -33,6 +34,7 @@ jobs:
           timeout: 120s
           command_timeout: 15m
           script: |
+            set -e
             cd /opt/maps-spexx
             git pull origin main
             cd insiderguide
