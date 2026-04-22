@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-vps-insider-guide
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,14 +20,14 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           timeout: 120s
-          command_timeout: 15m
+          command_timeout: 20m
           script: |
             set -e
             cd /opt/insider-guide
             git pull origin main
             cd insiderguide
             docker compose build --no-cache
-            docker compose up -d
+            docker compose up -d --remove-orphans --force-recreate --wait --wait-timeout 180
       - name: Retry on failure
         if: failure()
         uses: appleboy/ssh-action@v1
@@ -32,11 +36,15 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           timeout: 120s
-          command_timeout: 15m
+          command_timeout: 20m
           script: |
             set -e
             cd /opt/insider-guide
             git pull origin main
             cd insiderguide
             docker compose build --no-cache
-            docker compose up -d
+            # Nuke any dangling containers that a previous failed run left behind
+            for name in insider-guide-back insider-guide-front; do
+              docker rm -f "$name" 2>/dev/null || true
+            done
+            docker compose up -d --remove-orphans --force-recreate --wait --wait-timeout 180
