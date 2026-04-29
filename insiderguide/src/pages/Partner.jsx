@@ -14,35 +14,37 @@ const CATEGORY_OPTIONS = [
   { value: 'misc', label: 'Other' },
 ]
 
+// Featured slots per country across the network \u2014 global cap, drives scarcity
+const FEATURED_CAP_PER_COUNTRY = 10
+
 const TIERS = [
   {
     key: 'listed',
     name: 'Listed',
     price: 'Free',
-    period: 'waitlist',
-    description: 'Basic directory entry while you wait for review.',
+    period: 'directory',
+    description: 'Get found when travelers browse your country.',
     features: [
-      'Business name + Google Maps link',
-      'Category + city listing',
-      'Visible to travelers browsing your country',
-      'Admin review before going live',
+      'Name, category, city, and Maps link',
+      'Visible to all travelers browsing the guide',
+      'Reviewed by a network creator before going live',
     ],
-    cta: 'Join the waitlist',
+    cta: 'Apply for free listing',
   },
   {
     key: 'featured',
     name: 'Featured',
     price: '$200',
-    period: 'per guide',
-    description: 'Stand out in Alex\u2019s curated picks.',
+    period: 'per country',
+    description: 'Pinned in your category, endorsed by a creator.',
     highlight: true,
-    badge: 'Recommended',
+    badge: 'Most popular',
     features: [
-      'Everything in Listed',
-      'Pinned to top of your category',
-      'Written profile in Alex\u2019s voice',
-      '\u201cRecommended by Alex\u201d badge',
-      'Mentioned in the traveler newsletter',
+      'Pinned at the top of your category',
+      'Written profile in the creator\u2019s voice',
+      '\u201cTraveler-approved\u201d badge',
+      'Mentioned in the next traveler newsletter',
+      'One Instagram story from the creator who covers your country',
     ],
     cta: 'Apply for Featured',
   },
@@ -50,14 +52,14 @@ const TIERS = [
     key: 'partner',
     name: 'Partner',
     price: '$500',
-    period: 'guide + content',
-    description: 'Hero placement, dedicated story, ongoing collaboration.',
+    period: 'country + content',
+    description: 'Hero placement plus original content from a creator.',
     features: [
       'Everything in Featured',
-      'Hero placement in your country guide',
-      'Dedicated Instagram story by Alex',
-      'Logo in newsletter header',
-      'Content collaboration opportunity',
+      'Hero placement at the top of your country guide',
+      'One dedicated Instagram reel from a network creator',
+      'Logo in the next newsletter header',
+      'First refusal on cross-creator collaborations',
     ],
     cta: 'Apply to Partner',
   },
@@ -67,45 +69,54 @@ const HOW_IT_WORKS = [
   {
     step: '01',
     title: 'Apply',
-    desc: 'Tell us about your business, country, and which tier you\u2019re interested in. Takes two minutes.',
+    desc: 'Tell us about your business, country, and which tier you\u2019re interested in. Two minutes, no obligation.',
   },
   {
     step: '02',
-    title: 'We review',
-    desc: 'Alex personally reviews every application. We curate \u2014 not everything makes it in.',
+    title: 'A creator reviews',
+    desc: 'A travel creator covering your country reviews your application. Independent, traveler-loved places only \u2014 no chains, no pay-to-win.',
   },
   {
     step: '03',
     title: 'Get discovered',
-    desc: 'Once accepted, travelers planning trips to your country find you in the guide.',
+    desc: 'Once accepted, travelers planning a trip find you across the creator\u2019s guide, newsletter, and content.',
   },
 ]
 
 const FAQS = [
   {
+    q: 'Who curates Insider Guide?',
+    a: 'Insider Guide is a network of travel creators sharing their personal recommendation lists. Each country is curated by a creator who has actually been there \u2014 not algorithmic, not pay-to-rank.',
+  },
+  {
     q: 'How do I get accepted?',
-    a: 'Apply through the form below. Alex personally reviews every submission. We prioritise independent, traveler-loved places \u2014 not chains.',
+    a: 'Apply through the form below. The creator covering your country reviews each application. We prioritise independent, traveler-loved places \u2014 not chains.',
   },
   {
     q: 'What countries are open?',
-    a: 'The guide covers 90+ countries across South America, Central America, the Caribbean, Europe, Asia, the Middle East, and Africa. Pick yours in the form \u2014 if it\u2019s missing we\u2019ll add it.',
+    a: 'The network covers 90+ countries across South America, Central America, the Caribbean, Europe, Asia, the Middle East, and Africa. Pick yours in the form \u2014 if it\u2019s missing we\u2019ll add it.',
   },
   {
-    q: 'How are travelers finding me?',
-    a: 'Our country guides rank on Google, get shared through Alex\u2019s newsletter and Instagram (500K+ combined reach), and are the first place our community goes before a trip.',
+    q: 'How are travelers actually finding me?',
+    a: 'Country guides rank on Google for trip-planning searches and are shared through each creator\u2019s Instagram and newsletter. Travelers come here ready to book \u2014 not to scroll.',
+  },
+  {
+    q: 'Why not just use Google Maps reviews?',
+    a: 'Travelers don\u2019t trust 4.2\u2605 reviews from strangers anymore. They trust the people they follow. Insider Guide is a network of those people \u2014 so a placement here means more than a paid Google ad.',
   },
   {
     q: 'What\u2019s the difference between Featured and Partner?',
-    a: 'Featured gets you written placement at the top of your category. Partner adds hero placement, a dedicated Instagram story, and an ongoing content collab \u2014 ideal for hotels and flagship experiences.',
+    a: 'Featured = pinned in your category, creator endorsement, IG story. Partner = hero spot in the country guide plus a dedicated reel. Featured is for proven local businesses. Partner is for hotels and flagship experiences.',
   },
   {
     q: 'Is this a review site?',
-    a: 'No. Insider Guide is a personal recommendation from Alex Spexx. Listings are curated, not paid reviews. Featured and Partner tiers cover placement and content \u2014 never the opinion.',
+    a: 'No. Insider Guide is curated personal recommendations from creators. Listings are earned, not bought. Featured and Partner tiers cover placement and content \u2014 never the opinion.',
   },
 ]
 
 export default function Partner() {
   const [countries, setCountries] = useState([])
+  const [featuredByCountry, setFeaturedByCountry] = useState({})
   const [form, setForm] = useState({
     name: '',
     country_id: '',
@@ -124,11 +135,43 @@ export default function Partner() {
 
   useEffect(() => {
     async function loadCountries() {
-      const { data } = await supabase.from('countries').select('id, name, flag_emoji').order('name')
+      const { data } = await supabase.from('countries').select('id, name, slug, flag_emoji, published').order('name')
       if (data) setCountries(data)
     }
+    async function loadFeaturedCounts() {
+      // Paginate to count featured + partner per country
+      let all = []
+      let off = 0
+      while (true) {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('country_id, tier')
+          .in('tier', ['featured', 'partner'])
+          .range(off, off + 999)
+        if (error || !data || data.length === 0) break
+        all = all.concat(data)
+        if (data.length < 1000) break
+        off += 1000
+      }
+      const map = {}
+      for (const b of all) map[b.country_id] = (map[b.country_id] || 0) + 1
+      setFeaturedByCountry(map)
+    }
     loadCountries()
+    loadFeaturedCounts()
   }, [])
+
+  const selectedCountry = countries.find((c) => c.id === form.country_id)
+  const selectedTaken = featuredByCountry[form.country_id] || 0
+  const selectedRemaining = Math.max(0, FEATURED_CAP_PER_COUNTRY - selectedTaken)
+
+  // Aggregate slot scarcity for hero strip — show countries closest to filling up
+  const tightCountries = countries
+    .filter((c) => c.published)
+    .map((c) => ({ ...c, taken: featuredByCountry[c.id] || 0 }))
+    .filter((c) => c.taken > 0 && c.taken < FEATURED_CAP_PER_COUNTRY)
+    .sort((a, b) => b.taken - a.taken)
+    .slice(0, 4)
 
   const canSubmit = useMemo(() => {
     return form.name.trim() && form.country_id && form.email.trim() && !submitting
@@ -187,7 +230,7 @@ export default function Partner() {
           <Link to="/" className="flex items-center gap-3 no-underline">
             <span className="font-display text-[22px] text-text leading-none">Insider Guide</span>
             <span className="hidden sm:inline-block w-[1px] h-4 bg-border" />
-            <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">by @alexspexx</span>
+            <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">a network of travel creators</span>
           </Link>
           <a
             href="#apply"
@@ -214,13 +257,13 @@ export default function Partner() {
             </span>
 
             <h1 className="font-display text-[clamp(2.6rem,5.5vw,5rem)] leading-[0.95] tracking-[-0.02em] text-text mb-6">
-              Be found by travelers<br />
-              planning trips to<br />
-              <span className="text-accent-gradient italic">your country.</span>
+              Get found by travelers<br />
+              who already trust<br />
+              <span className="text-accent-gradient italic">the people they follow.</span>
             </h1>
 
             <p className="font-editorial text-[clamp(1.05rem,2vw,1.3rem)] text-text-secondary leading-relaxed max-w-xl italic mb-8">
-              100 countries. Handpicked listings. Featured placement for partners who deserve the spotlight.
+              Insider Guide is a network of curated travel guides by travel creators. One placement, multiple creator audiences, no algorithms in the way.
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -241,6 +284,68 @@ export default function Partner() {
         </div>
 
         <div className="shimmer-line max-w-[1120px] mx-auto" />
+      </section>
+
+      {/* ─── Why this works ─── */}
+      <section className="max-w-[1120px] mx-auto px-6 pt-16 pb-6">
+        <div className="flex items-center gap-3 mb-8">
+          <span className="w-2 h-2 rounded-full bg-accent/50" />
+          <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+            Why brands list here
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              k: '01',
+              h: 'Creator trust, not algorithms',
+              p: 'Travelers stopped trusting 4.2★ Google ratings from strangers. They trust the people they follow. Insider Guide is a network of those people — every listing here is curated by a real travel creator, not an ad system.',
+            },
+            {
+              k: '02',
+              h: 'One placement, multiple audiences',
+              p: 'List once and get discovered across every creator who covers your country. As more creators join the network, your placement compounds — without paying again.',
+            },
+            {
+              k: '03',
+              h: 'Booking-ready intent, not scrolling',
+              p: 'Travelers find Insider Guide while planning a trip — not while scrolling Maps for the closest pizza. The traffic is intentional, narrow, and converts.',
+            },
+          ].map((b, i) => (
+            <motion.div
+              key={b.k}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
+              className="relative flex flex-col bg-bg-card border border-border rounded-xl p-6 transition-all duration-400 hover:border-border-accent hover:bg-bg-elevated"
+            >
+              <span className="text-[11px] tracking-[0.12em] uppercase text-accent/60 font-light mb-4">{b.k}</span>
+              <h3 className="font-display text-[1.5rem] leading-[1.1] text-text mb-3">{b.h}</h3>
+              <p className="text-text-secondary text-[14px] leading-relaxed">{b.p}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {tightCountries.length > 0 && (
+          <div className="mt-8 border border-border rounded-xl p-5 bg-bg-card/60">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <span className="text-[11px] tracking-[0.18em] uppercase text-accent/80 font-light">
+                Featured slots filling up
+              </span>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {tightCountries.map((c) => (
+                  <span key={c.id} className="text-[12px] text-text-secondary tracking-[0.02em]">
+                    <span className="text-text">{c.flag_emoji} {c.name}</span>
+                    <span className="text-text-dim mx-1.5">·</span>
+                    <span className="text-accent">{Math.max(0, FEATURED_CAP_PER_COUNTRY - c.taken)} of {FEATURED_CAP_PER_COUNTRY} left</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ─── How It Works ─── */}
@@ -307,9 +412,15 @@ export default function Partner() {
                 <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">{tier.period}</span>
               </div>
 
-              <p className="font-editorial italic text-text-secondary text-[14px] leading-snug mb-6">
+              <p className="font-editorial italic text-text-secondary text-[14px] leading-snug mb-4">
                 {tier.description}
               </p>
+
+              {tier.key === 'featured' && (
+                <p className="text-[11px] tracking-[0.1em] uppercase text-accent/80 font-light mb-4">
+                  Limited to {FEATURED_CAP_PER_COUNTRY} slots per country
+                </p>
+              )}
 
               <ul className="space-y-2.5 mb-6">
                 {tier.features.map((f) => (
@@ -454,6 +565,13 @@ export default function Partner() {
                         </option>
                       ))}
                     </select>
+                    {selectedCountry && (
+                      <span className="block mt-1.5 text-[11px] text-accent/80 tracking-[0.05em]">
+                        {selectedRemaining > 0
+                          ? `${selectedRemaining} of ${FEATURED_CAP_PER_COUNTRY} Featured slots left in ${selectedCountry.name}`
+                          : `Featured slots filled in ${selectedCountry.name} — apply for Listed or join the Partner waitlist`}
+                      </span>
+                    )}
                   </Field>
 
                   <Field label="City">
