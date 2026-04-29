@@ -22,6 +22,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/partner" element={<Partner />} />
+        <Route path="/partners" element={<Partner />} />
+        <Route path="/for-business" element={<Partner />} />
         <Route path="/:slug" element={<CountryGuide />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

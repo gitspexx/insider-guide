@@ -17,8 +17,8 @@
 
   /* Text — warm cream, never pure white */
   --color-text: #EDE8DF;
-  --color-text-secondary: rgba(237, 232, 223, 0.55);
-  --color-text-dim: rgba(237, 232, 223, 0.28);
+  --color-text-secondary: rgba(237, 232, 223, 0.78);
+  --color-text-dim: rgba(237, 232, 223, 0.5);
 
   /* Borders */
   --color-border: rgba(237, 232, 223, 0.07);

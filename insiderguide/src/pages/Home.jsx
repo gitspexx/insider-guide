@@ -159,9 +159,15 @@ export default function Home() {
             <span className="hidden sm:inline-block w-[1px] h-4 bg-border" />
             <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">by @alexspexx</span>
           </div>
-          <a href="/admin" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-text-secondary transition-colors font-light">
-            Admin
-          </a>
+          <div className="flex items-center gap-5">
+            <a href="/partner" className="text-[11px] text-accent tracking-[0.12em] uppercase hover:text-accent/80 transition-colors font-light">
+              Feature your business
+            </a>
+            <span className="hidden sm:inline-block w-[1px] h-3 bg-border" />
+            <a href="/admin" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-text-secondary transition-colors font-light">
+              Admin
+            </a>
+          </div>
         </div>
       </motion.nav>
 
@@ -214,7 +220,12 @@ export default function Home() {
               className="relative"
             >
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border bg-bg-card">
-                <video src="/hero-reel.mp4" autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                <video
+                  src="/hero-reel.mp4"
+                  poster="/hero-reel.jpg"
+                  autoPlay loop muted playsInline preload="metadata"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-60 pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-r from-bg/30 via-transparent to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">

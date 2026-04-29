@@ -116,6 +116,7 @@ export default function Partner() {
     email: '',
     tier_interest: 'listed',
     notes: '',
+    prefers_call: false,
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -144,7 +145,8 @@ export default function Partner() {
     setError(null)
 
     const tierInterest = form.tier_interest
-    const notesPrefix = `[partner-signup] Tier interest: ${tierInterest}.`
+    const callFlag = form.prefers_call ? ' Prefers a quick call.' : ''
+    const notesPrefix = `[partner-signup] Tier interest: ${tierInterest}.${callFlag}`
     const extraNotes = form.notes.trim() ? ` ${form.notes.trim()}` : ''
 
     const payload = {
@@ -207,7 +209,7 @@ export default function Partner() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="max-w-3xl"
           >
-            <span className="text-[11px] tracking-[0.25em] uppercase text-accent/70 font-light block mb-5">
+            <span className="text-[11px] tracking-[0.18em] uppercase text-accent/70 font-light block mb-5">
               Partner Program
             </span>
 
@@ -311,7 +313,7 @@ export default function Partner() {
 
               <ul className="space-y-2.5 mb-6">
                 {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-[13px] text-text-secondary font-light leading-relaxed">
+                  <li key={f} className="flex items-start gap-2.5 text-[13px] text-text-secondary leading-relaxed">
                     <span className="w-1 h-1 mt-2 bg-accent/60 rounded-full shrink-0" />
                     <span>{f}</span>
                   </li>
@@ -385,7 +387,7 @@ export default function Partner() {
                 transition={{ duration: 0.5 }}
                 className="text-center max-w-lg mx-auto py-10"
               >
-                <span className="text-[11px] tracking-[0.25em] uppercase text-accent/70 font-light block mb-5">
+                <span className="text-[11px] tracking-[0.18em] uppercase text-accent/70 font-light block mb-5">
                   Application received
                 </span>
                 <h2 className="font-display text-[clamp(2rem,4vw,3rem)] leading-[1] text-text mb-4">
@@ -404,7 +406,7 @@ export default function Partner() {
             ) : (
               <>
                 <div className="mb-8 max-w-xl">
-                  <span className="text-[11px] tracking-[0.25em] uppercase text-accent/70 font-light block mb-3">
+                  <span className="text-[11px] tracking-[0.18em] uppercase text-accent/70 font-light block mb-3">
                     Apply to join
                   </span>
                   <h2 className="font-display text-[clamp(2rem,4vw,3rem)] leading-[1] text-text mb-3">
@@ -519,8 +521,20 @@ export default function Partner() {
                     />
                   </Field>
 
+                  <label className="md:col-span-2 flex items-center gap-3 cursor-pointer select-none group">
+                    <input
+                      type="checkbox"
+                      checked={form.prefers_call}
+                      onChange={(e) => update('prefers_call', e.target.checked)}
+                      className="w-4 h-4 rounded border-border bg-bg accent-accent cursor-pointer"
+                    />
+                    <span className="text-[12px] text-text-secondary tracking-[0.02em] group-hover:text-text transition-colors">
+                      I{'\u2019'}d prefer a quick call before deciding.
+                    </span>
+                  </label>
+
                   <div className="md:col-span-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2">
-                    <p className="text-[11px] text-text-dim font-light tracking-[0.05em] leading-relaxed max-w-sm">
+                    <p className="text-[11px] text-text-dim tracking-[0.05em] leading-relaxed max-w-sm">
                       By applying, you agree to receive one reply from the Insider Guide team. No spam {'\u2014'} ever.
                     </p>
                     <motion.button
@@ -551,7 +565,7 @@ export default function Partner() {
           <Link to="/" className="font-display text-lg text-text/40 hover:text-text/70 transition-colors no-underline">
             Insider Guide
           </Link>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5 flex-wrap justify-center">
             <a
               href="https://instagram.com/alexspexx"
               target="_blank"
@@ -561,9 +575,17 @@ export default function Partner() {
               Instagram
             </a>
             <span className="w-[1px] h-3 bg-border" />
-            <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">
-              Honest placement
-            </span>
+            <Link to="/privacy" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
+              Privacy
+            </Link>
+            <span className="w-[1px] h-3 bg-border" />
+            <Link to="/terms" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
+              Terms
+            </Link>
+            <span className="w-[1px] h-3 bg-border" />
+            <a href="mailto:lead@insiderguide.co" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
+              Contact
+            </a>
           </div>
         </div>
       </footer>
@@ -572,12 +594,12 @@ export default function Partner() {
 }
 
 const inputClass =
-  'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-[13px] text-text placeholder:text-text-dim/50 focus:border-accent/30 focus:shadow-[0_0_16px_rgba(200,165,90,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 transition-all font-light'
+  'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-[14px] text-text placeholder:text-text-dim/60 focus:border-accent/30 focus:shadow-[0_0_16px_rgba(200,165,90,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 transition-all'
 
 function Field({ label, required, className = '', children }) {
   return (
     <label className={`block ${className}`}>
-      <span className="block text-[11px] tracking-[0.12em] uppercase text-text-dim font-light mb-1.5">
+      <span className="block text-[11px] tracking-[0.12em] uppercase text-text-secondary mb-1.5">
         {label}{required ? ' *' : ''}
       </span>
       {children}
