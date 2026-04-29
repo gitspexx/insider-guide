@@ -244,10 +244,11 @@ export default function Partner() {
         style={{ background: 'rgba(11, 10, 8, 0.72)', backdropFilter: 'blur(16px) saturate(1.2)', WebkitBackdropFilter: 'blur(16px) saturate(1.2)' }}
       >
         <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 no-underline">
-            <span className="font-display text-[22px] text-text leading-none">Insider Guide</span>
-            <span className="hidden sm:inline-block w-[1px] h-4 bg-border" />
-            <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">a network of travel creators</span>
+          <Link to="/" className="flex items-center gap-3 no-underline group" aria-label="Insider Guide home">
+            <img src="/favicon.png" alt="" width="22" height="22" className="rounded-md" />
+            <span className="font-display text-[22px] text-text leading-none group-hover:text-accent transition-colors">Insider Guide</span>
+            <span className="hidden md:inline-block w-[1px] h-4 bg-border" />
+            <span className="hidden md:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">a network of travel creators</span>
           </Link>
           <a
             href="#apply"
