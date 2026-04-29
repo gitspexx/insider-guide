@@ -206,7 +206,11 @@ export default function Partner() {
       notes: `${notesPrefix}${extraNotes}`,
     }
 
-    const { error: insertError } = await supabase.from('businesses').insert(payload)
+    const { data: inserted, error: insertError } = await supabase
+      .from('businesses')
+      .insert(payload)
+      .select('id')
+      .single()
     setSubmitting(false)
 
     if (insertError) {
@@ -214,6 +218,19 @@ export default function Partner() {
       return
     }
     setSubmitted(true)
+
+    // Fire-and-forget notification — don't block the UI on it
+    if (inserted?.id) {
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-partner-application`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ business_id: inserted.id }),
+      }).catch((e) => console.warn('notify-partner-application failed:', e))
+    }
   }
 
   return (
