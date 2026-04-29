@@ -223,7 +223,8 @@ export default function Home() {
                 <video
                   src="/hero-reel.mp4"
                   poster="/hero-reel.jpg"
-                  autoPlay loop muted playsInline preload="metadata"
+                  autoPlay loop muted playsInline
+                  disablePictureInPicture
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-60 pointer-events-none" />
