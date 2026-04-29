@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import CountryCard from '../components/CountryCard'
@@ -12,6 +12,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [paywallCountry, setPaywallCountry] = useState(null)
   const [activeRegion, setActiveRegion] = useState('all')
+  const heroVideoRef = useRef(null)
+
+  useEffect(() => {
+    const v = heroVideoRef.current
+    if (!v) return
+    const tryPlay = () => {
+      const p = v.play()
+      if (p && typeof p.catch === 'function') p.catch(() => {})
+    }
+    tryPlay()
+    v.addEventListener('canplay', tryPlay)
+    return () => v.removeEventListener('canplay', tryPlay)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -157,7 +170,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <span className="font-display text-[22px] text-text leading-none">Insider Guide</span>
             <span className="hidden sm:inline-block w-[1px] h-4 bg-border" />
-            <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">by @alexspexx</span>
+            <span className="hidden sm:inline-block text-[11px] text-accent tracking-[0.15em] uppercase font-light">a network of travel creators</span>
           </div>
           <div className="flex items-center gap-5">
             <a href="/partner" className="text-[11px] text-accent tracking-[0.12em] uppercase hover:text-accent/80 transition-colors font-light">
@@ -182,8 +195,8 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <span className="text-[11px] tracking-[0.25em] uppercase text-accent/70 font-light block mb-5">
-                100 Countries Challenge
+              <span className="text-[11px] tracking-[0.18em] uppercase text-accent/70 block mb-5">
+                A network of travel creators
               </span>
 
               <h1 className="font-display text-[clamp(2.8rem,6vw,5.5rem)] leading-[0.92] tracking-[-0.02em] text-text mb-4">
@@ -191,8 +204,8 @@ export default function Home() {
                 <span className="text-accent-gradient italic">Guide</span>
               </h1>
 
-              <p className="font-editorial text-[clamp(1.05rem,2vw,1.3rem)] text-text-secondary leading-relaxed max-w-md italic mb-8">
-                The world, curated by someone who's actually been there.
+              <p className="text-[clamp(1.05rem,2vw,1.25rem)] text-text-secondary leading-relaxed max-w-md mb-8">
+                Curated travel guides by creators who've actually been there. Real lists, real recommendations, no algorithms.
               </p>
 
               <div className="flex items-center gap-6 pt-5 border-t border-border">
@@ -221,10 +234,12 @@ export default function Home() {
             >
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden border border-border bg-bg-card">
                 <video
+                  ref={heroVideoRef}
                   src="/hero-reel.mp4"
                   poster="/hero-reel.jpg"
                   autoPlay loop muted playsInline
                   disablePictureInPicture
+                  controls={false}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent opacity-60 pointer-events-none" />

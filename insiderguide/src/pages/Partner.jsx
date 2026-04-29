@@ -59,7 +59,7 @@ const TIERS = [
       'Hero placement at the top of your country guide',
       'One dedicated Instagram reel from a network creator',
       'Logo in the next newsletter header',
-      'First refusal on cross-creator collaborations',
+      'Priority access when creators look for sponsors in your country',
     ],
     cta: 'Apply to Partner',
   },
@@ -174,7 +174,7 @@ export default function Partner() {
     .slice(0, 4)
 
   const canSubmit = useMemo(() => {
-    return form.name.trim() && form.country_id && form.email.trim() && !submitting
+    return form.name.trim() && form.country_id && form.email.trim() && form.notes.trim().length >= 20 && !submitting
   }, [form, submitting])
 
   function update(field, value) {
@@ -262,7 +262,7 @@ export default function Partner() {
               <span className="text-accent-gradient italic">the people they follow.</span>
             </h1>
 
-            <p className="font-editorial text-[clamp(1.05rem,2vw,1.3rem)] text-text-secondary leading-relaxed max-w-xl italic mb-8">
+            <p className="text-[clamp(1.05rem,2vw,1.25rem)] text-text-secondary leading-relaxed max-w-xl mb-8">
               Insider Guide is a network of curated travel guides by travel creators. One placement, multiple creator audiences, no algorithms in the way.
             </p>
 
@@ -369,7 +369,7 @@ export default function Partner() {
             >
               <span className="text-[11px] tracking-[0.12em] uppercase text-accent/60 font-light mb-4">{step.step}</span>
               <h3 className="font-display text-[1.75rem] leading-[1.1] text-text mb-2">{step.title}</h3>
-              <p className="font-editorial italic text-text-secondary text-[15px] leading-snug">{step.desc}</p>
+              <p className="text-text-secondary text-[14px] leading-[1.65]">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -412,7 +412,7 @@ export default function Partner() {
                 <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">{tier.period}</span>
               </div>
 
-              <p className="font-editorial italic text-text-secondary text-[14px] leading-snug mb-4">
+              <p className="text-text-secondary text-[14px] leading-[1.6] mb-4">
                 {tier.description}
               </p>
 
@@ -471,7 +471,7 @@ export default function Partner() {
                 {faq.q}
                 <span className="text-accent/50 text-sm shrink-0 group-open:rotate-45 transition-transform duration-300">+</span>
               </summary>
-              <p className="mt-3 font-editorial italic text-text-secondary text-[14px] leading-relaxed">{faq.a}</p>
+              <p className="mt-3 text-text-secondary text-[15px] leading-[1.65]">{faq.a}</p>
             </motion.details>
           ))}
         </div>
@@ -504,8 +504,8 @@ export default function Partner() {
                 <h2 className="font-display text-[clamp(2rem,4vw,3rem)] leading-[1] text-text mb-4">
                   We{'\u2019'}ll be in touch.
                 </h2>
-                <p className="font-editorial italic text-text-secondary text-[16px] leading-relaxed mb-8">
-                  Alex personally reviews every application. Expect a reply within 5 business days at the email you provided.
+                <p className="text-text-secondary text-[15px] leading-[1.65] mb-8">
+                  A creator covering your country reviews every application. Expect a reply at <span className="text-text">{form.email || 'the email you provided'}</span> within 5 business days, with a clear next step.
                 </p>
                 <Link
                   to="/"
@@ -523,8 +523,8 @@ export default function Partner() {
                   <h2 className="font-display text-[clamp(2rem,4vw,3rem)] leading-[1] text-text mb-3">
                     Tell us about your business.
                   </h2>
-                  <p className="font-editorial italic text-text-secondary text-[15px] leading-relaxed">
-                    Two minutes. Alex reads every application.
+                  <p className="text-text-secondary text-[15px] leading-[1.65]">
+                    Two minutes. The creator covering your country reads every application personally — no auto-replies.
                   </p>
                 </div>
 
@@ -629,12 +629,13 @@ export default function Partner() {
                     />
                   </Field>
 
-                  <Field label="Anything else?" className="md:col-span-2">
+                  <Field label="What makes your place special?" required className="md:col-span-2">
                     <textarea
                       value={form.notes}
                       onChange={(e) => update('notes', e.target.value)}
-                      rows={3}
-                      placeholder="Optional \u2014 tell us what makes your place special."
+                      rows={4}
+                      required
+                      placeholder="A short pitch \u2014 what travelers love about it, what kind of place it is, why it should be in the guide. 2\u20133 sentences is fine."
                       className={`${inputClass} resize-none`}
                     />
                   </Field>
