@@ -413,6 +413,20 @@ export default function CSVImport() {
         ok: true,
         text: `Enriched ${progress.done} businesses — ${progress.found.email} emails, ${progress.found.whatsapp} WhatsApp, ${progress.found.instagram} Instagram found`,
       })
+
+      // Event-driven CRM routing: push newly-enriched rows into contacts so
+      // outreach campaigns auto-enroll. Fire-and-forget — UI doesn't block.
+      if (progress.found.email + progress.found.whatsapp + progress.found.instagram + progress.found.website > 0) {
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/route-businesses-to-gateway`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({}),
+        }).catch((e) => console.warn('route-businesses-to-gateway call failed:', e))
+      }
     } catch (e) {
       setEnrichResult({ ok: false, text: e.message })
     } finally {
