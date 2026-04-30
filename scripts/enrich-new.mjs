@@ -79,3 +79,24 @@ for (let i=0; i<ids.length; i+=BATCH) {
   process.stdout.write(`  ${done}/${ids.length} | email:${found.email} ig:${found.instagram} wa:${found.whatsapp} site:${found.website} | timeouts:${timeouts}\r`)
 }
 console.log(`\nDone. ${done} processed. ${found.email} emails, ${found.instagram} IG, ${found.whatsapp} WA, ${found.website} sites. ${timeouts} timeouts.`)
+
+// Trigger CRM routing for the rows we just enriched (event-driven, not cron).
+// Fire-and-forget — failure here doesn't break enrichment.
+if (found.email + found.instagram + found.whatsapp + found.website > 0) {
+  console.log(`Triggering CRM routing for newly-enriched rows...`)
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/route-businesses-to-gateway`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify({}),
+    })
+    const res = await r.json()
+    console.log(`  routed: imported=${res.imported||0} dup=${res.duplicates||0} enrolled=${res.enrolled||0} errors=${res.errors||0}`)
+  } catch (e) {
+    console.warn(`  routing call failed (non-fatal): ${e.message}`)
+  }
+}
