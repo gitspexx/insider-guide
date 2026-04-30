@@ -422,21 +422,36 @@ export default function Home() {
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
-        <div className="max-w-[1120px] mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-display text-lg text-text/40">Insider Guide</span>
-          <div className="flex items-center gap-6">
-            <a
-              href="https://instagram.com/alexspexx"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light"
-            >
-              Instagram
-            </a>
-            <span className="w-[1px] h-3 bg-border" />
-            <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">
-              Honest placement
-            </span>
+        <div className="max-w-[1120px] mx-auto px-6 py-10 flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="font-display text-lg text-text/40">Insider Guide</span>
+            <div className="flex items-center gap-6">
+              <a
+                href="https://instagram.com/alexspexx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light"
+              >
+                Instagram
+              </a>
+              <span className="w-[1px] h-3 bg-border" />
+              <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">
+                Honest placement
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-text-dim font-light">
+            <a href="/legal/privacy.html" className="hover:text-accent transition-colors">Privacy</a>
+            <a href="/legal/terms.html" className="hover:text-accent transition-colors">Terms</a>
+            <a href="/legal/cookies.html" className="hover:text-accent transition-colors">Cookies</a>
+            <a href="/legal/data-retention.html" className="hover:text-accent transition-colors">Data Retention</a>
+            <a href="/legal/acceptable-use.html" className="hover:text-accent transition-colors">Acceptable Use</a>
+            <a href="/legal/refund-policy.html" className="hover:text-accent transition-colors">Refund</a>
+            <a href="/legal/creator-agreement.html" className="hover:text-accent transition-colors">Creator Agreement</a>
+            <a href="/legal/brand-partner-terms.html" className="hover:text-accent transition-colors">Brand Partners</a>
+            <a href="/legal/listing-removal-policy.html" className="hover:text-accent transition-colors">Listing Removal</a>
+            <a href="/legal/dmca.html" className="hover:text-accent transition-colors">DMCA</a>
+            <span className="text-text-dim/60">© {new Date().getFullYear()} BCAX Group LLC</span>
           </div>
         </div>
       </footer>
