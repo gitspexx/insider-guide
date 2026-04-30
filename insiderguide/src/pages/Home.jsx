@@ -451,7 +451,7 @@ export default function Home() {
             <a href="/legal/brand-partner-terms.html" className="hover:text-accent transition-colors">Brand Partners</a>
             <a href="/legal/listing-removal-policy.html" className="hover:text-accent transition-colors">Listing Removal</a>
             <a href="/legal/dmca.html" className="hover:text-accent transition-colors">DMCA</a>
-            <span className="text-text-dim/60">© {new Date().getFullYear()} BCAX Group LLC</span>
+            <span className="text-text-dim/60">© {new Date().getFullYear()} BCAX LLC</span>
           </div>
         </div>
       </footer>
