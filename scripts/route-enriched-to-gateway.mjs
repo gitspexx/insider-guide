@@ -69,7 +69,7 @@ async function pushBatch(leads) {
   const r = await fetch(GATEWAY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Api-Key': GATEWAY_KEY },
-    body: JSON.stringify({ source: 'insider-guide-enrichment', source_batch_id: `ig-${Date.now()}`, leads }),
+    body: JSON.stringify({ source: 'insider_guide_enrichment', source_batch_id: `ig-${Date.now()}`, leads }),
   })
   const text = await r.text()
   if (!r.ok) throw new Error(`gateway: ${r.status} ${text.slice(0,300)}`)
