@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const CATEGORY_OPTIONS = [
@@ -115,6 +115,7 @@ const FAQS = [
 ]
 
 export default function Partner() {
+  const navigate = useNavigate()
   const [countries, setCountries] = useState([])
   const [featuredByCountry, setFeaturedByCountry] = useState({})
   const [form, setForm] = useState({
@@ -449,17 +450,31 @@ export default function Partner() {
                 ))}
               </ul>
 
-              <a
-                href="#apply"
-                onClick={() => update('tier_interest', tier.key)}
-                className={`mt-auto text-center text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-3 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
-                  tier.highlight
-                    ? 'bg-accent text-bg hover:bg-accent/85'
-                    : 'border border-border text-text-secondary hover:border-border-hover hover:text-text hover:bg-bg-elevated'
-                }`}
-              >
-                {tier.cta}
-              </a>
+              {tier.key === 'listed' ? (
+                <a
+                  href="#apply"
+                  onClick={() => update('tier_interest', tier.key)}
+                  className={`mt-auto text-center text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-3 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+                    tier.highlight
+                      ? 'bg-accent text-bg hover:bg-accent/85'
+                      : 'border border-border text-text-secondary hover:border-border-hover hover:text-text hover:bg-bg-elevated'
+                  }`}
+                >
+                  {tier.cta}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/checkout?tier=${tier.key}`)}
+                  className={`mt-auto text-center text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-3 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+                    tier.highlight
+                      ? 'bg-accent text-bg hover:bg-accent/85'
+                      : 'border border-border text-text-secondary hover:border-border-hover hover:text-text hover:bg-bg-elevated'
+                  }`}
+                >
+                  {tier.cta}
+                </button>
+              )}
             </motion.div>
           ))}
         </div>

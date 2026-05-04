@@ -12,6 +12,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.3.0",
+    "@stripe/stripe-js": "^9.4.0",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.36.0",
     "react": "^19.2.0",

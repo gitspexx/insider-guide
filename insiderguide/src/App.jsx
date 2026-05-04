@@ -14,6 +14,8 @@ import AdminMapsImport from './pages/admin/MapsImport'
 import AdminMapsLinks from './pages/admin/MapsLinks'
 import AdminOpportunities from './pages/admin/Opportunities'
 import Partner from './pages/Partner'
+import Checkout from './pages/Checkout'
+import CheckoutSuccess from './pages/CheckoutSuccess'
 import AdminRoute from './components/AdminRoute'
 
 export default function App() {
@@ -24,6 +26,8 @@ export default function App() {
         <Route path="/partner" element={<Partner />} />
         <Route path="/partners" element={<Partner />} />
         <Route path="/for-business" element={<Partner />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/:slug" element={<CountryGuide />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
