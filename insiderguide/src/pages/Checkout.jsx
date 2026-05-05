@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckoutForm } from '../components/checkout/CheckoutForm'
+import { supabase } from '../lib/supabase'
 
 // IG tier pricing — these MUST stay in sync with the BCAX Stripe Prices
 // (insiderguide_featured = $200, insiderguide_partner = $500). bcax-charge in
@@ -35,6 +36,12 @@ export default function Checkout() {
   const [email, setEmail] = useState('')
   const [emailConfirmed, setEmailConfirmed] = useState(false)
   const [emailError, setEmailError] = useState(null)
+  // The `businesses.id` we pre-create as a paid-pending row before charging.
+  // Passed to init-checkout as `customer_external_id` so the BCAX callback can
+  // flip the right row to the right tier when payment lands. Without this,
+  // paid Featured/Partner customers leave NO IG-side ledger of what they paid for.
+  const [pendingBusinessId, setPendingBusinessId] = useState(null)
+  const [creatingPending, setCreatingPending] = useState(false)
 
   const returnUrl = useMemo(
     () => `${window.location.origin}/checkout/success?tier=${tierKey}`,
@@ -61,7 +68,7 @@ export default function Checkout() {
     )
   }
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault()
     const trimmed = email.trim()
     if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
@@ -70,7 +77,64 @@ export default function Checkout() {
     }
     setEmailError(null)
     setEmail(trimmed)
-    setEmailConfirmed(true)
+
+    // Pre-create the pending businesses row. We need its id BEFORE Stripe
+    // confirms — the bcax-callback needs a stable handle to flip on success.
+    // If this fails (RLS/network), surface to user — DO NOT proceed to payment.
+    setCreatingPending(true)
+    try {
+      // Derive a placeholder name from the email's local part so admin can
+      // recognize the row at-a-glance before the applicant fills in details.
+      const emailLocal = trimmed.split('@')[0]
+      const emailDomain = trimmed.split('@')[1] ?? ''
+      const placeholderName = emailLocal
+        ? `${emailLocal} (pending ${tier.name})`
+        : `Pending ${tier.name} application`
+
+      // country_id is NOT NULL on businesses — but we don't collect it here
+      // (the upstream Partner page form does, this Checkout page is the
+      // pure-payment entrypoint). Pick the first published country as a
+      // placeholder; admin re-assigns on review. Nullable by design? No —
+      // schema requires it, so we MUST seed something.
+      const { data: anyCountry, error: cErr } = await supabase
+        .from('countries')
+        .select('id')
+        .eq('published', true)
+        .order('name')
+        .limit(1)
+        .maybeSingle()
+      if (cErr || !anyCountry?.id) {
+        throw new Error('No countries available to seed pending row')
+      }
+
+      const payload = {
+        name: placeholderName,
+        country_id: anyCountry.id,
+        email: trimmed,
+        tier: 'listed',
+        published: false,
+        outreach_status: 'to_contact',
+        paid_pending_tier: tier.key, // 'featured' | 'partner'
+        notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}. Awaiting Stripe confirmation.`,
+      }
+
+      const { data: inserted, error: insertError } = await supabase
+        .from('businesses')
+        .insert(payload)
+        .select('id')
+        .single()
+
+      if (insertError || !inserted?.id) {
+        throw new Error(insertError?.message ?? 'Failed to create pending row')
+      }
+      setPendingBusinessId(inserted.id)
+      setEmailConfirmed(true)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setEmailError(`Could not start application: ${msg}`)
+    } finally {
+      setCreatingPending(false)
+    }
   }
 
   return (
@@ -137,9 +201,10 @@ export default function Checkout() {
 
                 <button
                   type="submit"
-                  className="w-full bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+                  disabled={creatingPending}
+                  className="w-full bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Continue to payment
+                  {creatingPending ? 'Preparing…' : 'Continue to payment'}
                 </button>
               </form>
             ) : (
@@ -160,6 +225,8 @@ export default function Checkout() {
                   amount_cents={tier.amount_cents}
                   currency="usd"
                   customer_email={email}
+                  customer_external_id={pendingBusinessId}
+                  price_lookup_key={`insiderguide_${tier.key}`}
                   return_url={returnUrl}
                   theme={{ primary_color: '#c8a55a', label: tier.label }}
                 />

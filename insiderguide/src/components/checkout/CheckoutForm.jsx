@@ -43,6 +43,14 @@ export function CheckoutForm({
   amount_cents,
   currency = 'usd',
   customer_email,
+  // Pre-created `businesses.id` (uuid) — passed verbatim to init-checkout
+  // so BCAX's tenant callback (`one_time.succeeded`) can flip the right
+  // ledger row to the right tier on success. Required for the IG paid flow.
+  customer_external_id,
+  // 'insiderguide_featured' | 'insiderguide_partner' — kept on the metadata
+  // so the BCAX webhook can resolve which tier was bought even if the
+  // amount_cents is later normalized.
+  price_lookup_key,
   return_url,
   theme,
   onError,
@@ -74,8 +82,12 @@ export function CheckoutForm({
             currency,
             project_tag: 'insiderguide',
             customer_email,
-            // customer_external_id is overridden server-side to user.id —
-            // for anonymous sessions that's the synthetic anon user id.
+            // customer_external_id, when present, MUST be the IG businesses.id
+            // (not the throwaway anonymous auth.users.id). init-checkout will
+            // forward it as-is so bcax-charge stamps the PaymentIntent metadata
+            // with this id — that's what closes the ledger loop on callback.
+            customer_external_id,
+            price_lookup_key,
           }),
         })
         if (!res.ok) {
@@ -99,7 +111,7 @@ export function CheckoutForm({
     return () => {
       cancelled = true
     }
-  }, [amount_cents, currency, customer_email, onError])
+  }, [amount_cents, currency, customer_email, customer_external_id, price_lookup_key, onError])
 
   const appearance = useMemo(() => ({
     theme: 'night',

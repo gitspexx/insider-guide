@@ -77,12 +77,26 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // customer_external_id resolution:
+  //   1. The IG Checkout flow pre-creates a `businesses` row and passes its
+  //      uuid as `customer_external_id` — that's the ledger handle bcax-callback
+  //      uses to flip the right row to the right tier on `one_time.succeeded`.
+  //      We only accept uuid-shaped strings to avoid letting a caller stamp
+  //      arbitrary text into Stripe metadata.
+  //   2. Fallback: the (anonymous) auth user.id. Disposable but non-blocking.
+  const isUuid = (v: unknown): v is string =>
+    typeof v === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  const externalId = isUuid(body.customer_external_id)
+    ? (body.customer_external_id as string)
+    : user.id;
+
   const forwardBody = {
     ...body,
     project_tag: "insiderguide",
     mode: body.mode ?? "elements",
-    customer_email: user.email ?? body.customer_email,
-    customer_external_id: user.id,
+    customer_email: body.customer_email ?? user.email,
+    customer_external_id: externalId,
   };
 
   const upstream = await fetch(BCAX_CHARGE_URL, {
