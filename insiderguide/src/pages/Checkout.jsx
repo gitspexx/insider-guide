@@ -43,9 +43,15 @@ export default function Checkout() {
   const [pendingBusinessId, setPendingBusinessId] = useState(null)
   const [creatingPending, setCreatingPending] = useState(false)
 
+  // pendingBusinessId is appended as `?ref=` so the success page can show the
+  // applicant a stable reference id without any backend round-trip. It's set
+  // AFTER email submit (handleEmailSubmit), so the memo recomputes once known.
   const returnUrl = useMemo(
-    () => `${window.location.origin}/checkout/success?tier=${tierKey}`,
-    [tierKey]
+    () => {
+      const base = `${window.location.origin}/checkout/success?tier=${tierKey}`
+      return pendingBusinessId ? `${base}&ref=${pendingBusinessId}` : base
+    },
+    [tierKey, pendingBusinessId]
   )
 
   // Bad / missing tier param — bounce back to Partner.

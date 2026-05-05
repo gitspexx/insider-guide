@@ -6,6 +6,11 @@ const TIER_LABELS = {
   partner: 'Partner',
 }
 
+const TIER_PRICES = {
+  featured: '$200',
+  partner: '$500',
+}
+
 export default function CheckoutSuccess() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
@@ -13,6 +18,15 @@ export default function CheckoutSuccess() {
   const status = params.get('redirect_status') ?? ''
   const tier = params.get('tier') ?? ''
   const tierLabel = TIER_LABELS[tier] ?? tier
+  const tierPrice = TIER_PRICES[tier] ?? ''
+  // Stripe appends payment_intent + payment_intent_client_secret on the return
+  // URL after a successful confirm. We surface the PI id as a confirmation
+  // handle so support can look it up in the BCAX dashboard if needed.
+  const paymentIntent = params.get('payment_intent') ?? ''
+  // Our own ledger reference — the businesses.id we pre-created in Checkout.jsx
+  // before kicking off the charge. Useful for the user to quote when emailing
+  // hello@ about their pending application before the 48h review.
+  const reference = params.get('ref') ?? ''
 
   const succeeded = status === 'succeeded'
   const processing = status === 'processing'
@@ -54,6 +68,38 @@ export default function CheckoutSuccess() {
             <p className="text-text-secondary text-[14px] leading-[1.65] mb-6">
               We{'’'}ll review your application within 48 hours. The creator covering your country reads every submission personally — expect a reply with next steps and what to send (photos, copy, IG handle) at the email on your receipt.
             </p>
+
+            {(tierLabel || paymentIntent || reference) && (
+              <div className="border border-border rounded-lg bg-bg/40 p-4 mb-6 text-left space-y-2">
+                <div className="text-[10px] tracking-[0.14em] uppercase text-text-dim font-light mb-2">
+                  Order details
+                </div>
+                {tierLabel && (
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="text-text-secondary">Tier</span>
+                    <span className="text-text font-medium">
+                      InsiderGuide {tierLabel}{tierPrice ? ` — ${tierPrice}` : ''}
+                    </span>
+                  </div>
+                )}
+                {reference && (
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="text-text-secondary">Reference</span>
+                    <span className="text-text font-mono text-[11px] break-all">{reference}</span>
+                  </div>
+                )}
+                {paymentIntent && (
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="text-text-secondary">Confirmation</span>
+                    <span className="text-text font-mono text-[11px] break-all">{paymentIntent}</span>
+                  </div>
+                )}
+                <p className="text-[10px] text-text-dim leading-relaxed pt-2 border-t border-border/60 mt-2">
+                  A receipt has been emailed to you by Stripe. Quote the reference or confirmation id if you need to reach support.
+                </p>
+              </div>
+            )}
+
             <button
               onClick={() => navigate('/')}
               className="w-full bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -74,6 +120,27 @@ export default function CheckoutSuccess() {
             <p className="text-text-secondary text-[14px] leading-[1.65] mb-6">
               Your bank is finalizing the charge. We{'’'}ll email you when it clears, and your application enters the creator review queue automatically.
             </p>
+
+            {(paymentIntent || reference) && (
+              <div className="border border-border rounded-lg bg-bg/40 p-4 mb-6 text-left space-y-2">
+                <div className="text-[10px] tracking-[0.14em] uppercase text-text-dim font-light mb-2">
+                  For your records
+                </div>
+                {reference && (
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="text-text-secondary">Reference</span>
+                    <span className="text-text font-mono text-[11px] break-all">{reference}</span>
+                  </div>
+                )}
+                {paymentIntent && (
+                  <div className="flex justify-between gap-3 text-[12px]">
+                    <span className="text-text-secondary">Confirmation</span>
+                    <span className="text-text font-mono text-[11px] break-all">{paymentIntent}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               onClick={() => navigate('/')}
               className="w-full bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
