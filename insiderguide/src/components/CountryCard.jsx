@@ -21,8 +21,8 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
       <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-700`} />
 
       {/* Top row */}
-      <div className="relative flex items-start justify-between mb-6">
-        <span className="text-4xl leading-none">{country.flag_emoji}</span>
+      <div className="relative flex items-start justify-between mb-3">
+        <span className="text-3xl leading-none">{country.flag_emoji}</span>
         {locked ? (
           <span className={`text-[10px] tracking-[0.15em] uppercase border px-2.5 py-1 rounded-full font-light ${
             comingSoon ? 'text-text-dim/40 border-border/50' : 'text-accent/50 border-accent/20'
@@ -37,14 +37,14 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
       </div>
 
       {/* Name */}
-      <h2 className={`relative font-display text-[1.75rem] leading-[1.1] mb-2 transition-colors duration-300 ${
+      <h2 className={`relative font-display text-[1.4rem] leading-[1.1] mb-1.5 transition-colors duration-300 ${
         locked ? 'text-text/30 group-hover:text-text/50' : 'text-text group-hover:text-accent'
       }`}>
         {country.name}
       </h2>
 
       {/* Tagline */}
-      <p className="relative font-editorial italic text-text-secondary text-[15px] leading-snug mb-6">
+      <p className="relative font-editorial italic text-text-secondary text-[13px] leading-snug mb-4 line-clamp-2">
         {country.tagline}
       </p>
 
@@ -69,7 +69,7 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15 + index * 0.08 }}
         onClick={onLockedClick}
-        className="relative bg-bg-card border border-border rounded-xl p-6 text-left cursor-pointer group overflow-hidden transition-all duration-400 hover:border-border-hover hover:bg-bg-elevated flex flex-col min-h-[200px]"
+        className="relative bg-bg-card border border-border rounded-xl p-5 text-left cursor-pointer group overflow-hidden transition-all duration-400 hover:border-border-hover hover:bg-bg-elevated flex flex-col min-h-[150px]"
       >
         {cardContent}
       </motion.button>
@@ -84,7 +84,7 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
     >
       <Link
         to={`/${country.slug}`}
-        className="relative flex flex-col min-h-[200px] bg-bg-card border border-border rounded-xl p-6 no-underline group overflow-hidden transition-all duration-400 hover:border-border-accent hover:bg-bg-elevated hover:shadow-[0_8px_40px_rgba(200,165,90,0.05)]"
+        className="relative flex flex-col min-h-[150px] bg-bg-card border border-border rounded-xl p-5 no-underline group overflow-hidden transition-all duration-400 hover:border-border-accent hover:bg-bg-elevated hover:shadow-[0_8px_40px_rgba(200,165,90,0.05)]"
       >
         {cardContent}
       </Link>
