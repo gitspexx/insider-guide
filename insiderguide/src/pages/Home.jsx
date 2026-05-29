@@ -13,6 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [paywallCountry, setPaywallCountry] = useState(null)
   const [activeRegion, setActiveRegion] = useState('all')
+  const [query, setQuery] = useState('')
   const heroVideoRef = useRef(null)
 
   useEffect(() => {
@@ -116,9 +117,12 @@ export default function Home() {
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
     })
 
-  // Filter by region
+  // Filter by region + optional name query
   function filterByRegion(list) {
-    return activeRegion === 'all' ? list : list.filter((c) => c.region === activeRegion)
+    const q = query.trim().toLowerCase()
+    let out = activeRegion === 'all' ? list : list.filter((c) => c.region === activeRegion)
+    if (q) out = out.filter((c) => (c.name || '').toLowerCase().includes(q))
+    return out
   }
 
   // Group a list by region
@@ -210,6 +214,41 @@ export default function Home() {
                 Curated travel guides by creators who've actually been there. Real lists, real recommendations, no algorithms.
               </p>
 
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <a
+                  href="#guides"
+                  onClick={(e) => { e.preventDefault(); document.getElementById('guides')?.scrollIntoView({ behavior: 'smooth' }) }}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-accent/40 bg-accent/10 text-accent text-[12px] tracking-[0.16em] uppercase font-light hover:bg-accent/20 hover:border-accent/60 transition-all duration-300 no-underline"
+                >
+                  Explore guides <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href="/partner"
+                  className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-border text-text-dim text-[12px] tracking-[0.16em] uppercase font-light hover:text-accent hover:border-border-hover transition-all duration-300 no-underline"
+                >
+                  Feature your business
+                </a>
+              </div>
+
+              <div className="relative max-w-sm mb-8">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={`Search ${allCountries.length} countries…`}
+                  aria-label="Search countries"
+                  className="w-full pl-4 pr-9 py-3 rounded-lg bg-bg-card border border-border text-text text-sm placeholder:text-text-dim focus:outline-none focus:border-accent/40 transition-colors duration-300"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-accent text-sm cursor-pointer"
+                  >✕</button>
+                )}
+              </div>
+
               <div className="flex items-center gap-6 pt-5 border-t border-border">
                 <div>
                   <span className="font-display text-2xl text-text">{allCountries.length}</span>
@@ -261,7 +300,7 @@ export default function Home() {
       </section>
 
       {/* ─── Region Filter ─── */}
-      <section className="max-w-[1120px] mx-auto px-6 pt-12 pb-4">
+      <section id="guides" className="max-w-[1120px] mx-auto px-6 pt-12 pb-4 scroll-mt-16">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setActiveRegion('all')}
