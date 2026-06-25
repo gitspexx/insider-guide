@@ -258,7 +258,7 @@ export default function Checkout() {
                 </span>
               </div>
               <p className="text-text-secondary text-[13px] leading-[1.55] mb-4">
-                Reviewed by a country creator within 48 hours of payment. If your application isn{'’'}t accepted, you{'’'}re refunded in full.
+                Reviewed by a country creator within 48 hours of payment. You{'’'}ll hear back either way with next steps.
               </p>
               <div className="border-t border-border pt-3 text-[11px] text-text-dim space-y-1.5 leading-relaxed">
                 <div>One-time charge — no subscription.</div>
