@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import CountryCard from '../components/CountryCard'
 import PaywallModal from '../components/PaywallModal'
+import Seo, { SITE_URL, SITE_NAME } from '../components/Seo'
 
 const REGION_ORDER = ['South America', 'Central America', 'Caribbean', 'Europe', 'Asia', 'Middle East', 'Africa']
 
@@ -174,6 +175,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        description="Curated travel guides from creators who've actually been there — where to eat, stay and explore, country by country. Real picks from people travelers trust, not algorithmic 4.2-star noise."
+        jsonLd={[
+          { '@context': 'https://schema.org', '@type': 'Organization', name: SITE_NAME, url: SITE_URL, logo: `${SITE_URL}/favicon.png` },
+          { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+        ]}
+      />
       {/* ─── Nav ─── */}
       <motion.nav
         initial={{ opacity: 0 }}

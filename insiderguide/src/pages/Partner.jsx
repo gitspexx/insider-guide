@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Seo from '../components/Seo'
 
 const CATEGORY_OPTIONS = [
   { value: 'eat', label: 'Restaurant' },
@@ -236,6 +237,11 @@ export default function Partner() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        title="List your business — Partner with Insider Guide"
+        description="Get your restaurant, hotel, cafe or experience in front of travelers who trust creator-curated guides. Featured and Partner placements, reviewed by the creator covering your country."
+        path="/partner"
+      />
       {/* ─── Nav ─── */}
       <motion.nav
         initial={{ opacity: 0 }}

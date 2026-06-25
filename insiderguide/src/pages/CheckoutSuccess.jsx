@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import Seo from '../components/Seo'
 
 const TIER_LABELS = {
   featured: 'Featured',
@@ -39,6 +40,7 @@ export default function CheckoutSuccess() {
         transition={{ duration: 0.5 }}
         className="border border-border rounded-xl bg-bg-card max-w-md w-full p-8 text-center"
       >
+        <Seo title="Order confirmation" path="/checkout/success" noindex />
         <div className="flex justify-center mb-5">
           {succeeded || processing ? (
             <div className="h-14 w-14 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center">

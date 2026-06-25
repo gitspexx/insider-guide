@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import BusinessCard from '../components/BusinessCard'
 import EmailCapture from '../components/EmailCapture'
+import Seo, { SITE_URL, SITE_NAME } from '../components/Seo'
 
 function getMainCity(city) {
   if (!city) return null
@@ -107,6 +108,47 @@ export default function CountryGuide() {
   categoryGroupData.forEach((g) => navSections.push({ key: g.key, label: g.label }))
   if (uncategorized.length > 0) navSections.push({ key: 'other', label: 'Other' })
 
+  const canonicalPath = `/${slug}`
+  const seoDescription = country
+    ? (country.tagline
+        ? `${country.tagline} — ${businesses.length} hand-picked places to eat, stay & explore in ${country.name}.`
+        : `${businesses.length} hand-picked places to eat, stay & explore in ${country.name}, curated by Insider Guide creators.`)
+    : ''
+  const seoJsonLd = country
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: SITE_NAME, item: SITE_URL },
+            { '@type': 'ListItem', position: 2, name: `${country.name} Travel Guide`, item: `${SITE_URL}${canonicalPath}` },
+          ],
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: `${country.name} — curated places`,
+          numberOfItems: businesses.length,
+          itemListElement: businesses.slice(0, 50).map((b, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            item: {
+              '@type': 'LocalBusiness',
+              name: b.name,
+              ...(b.description ? { description: b.description } : {}),
+              ...(b.photo_url ? { image: b.photo_url } : {}),
+              ...(b.website || b.google_maps_url ? { url: b.website || b.google_maps_url } : {}),
+              address: {
+                '@type': 'PostalAddress',
+                ...(b.city ? { addressLocality: getMainCity(b.city) } : {}),
+                addressCountry: country.name,
+              },
+            },
+          })),
+        },
+      ]
+    : []
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -126,6 +168,7 @@ export default function CountryGuide() {
   if (!country) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+        <Seo title="Country not found" description="This guide isn't available." path={canonicalPath} noindex />
         <span className="font-display text-2xl text-text/40">Country not found</span>
         <Link to="/" className="text-accent text-[11px] tracking-[0.15em] uppercase font-light hover:text-accent/70 transition-colors">
           &larr; Back to guides
@@ -136,6 +179,14 @@ export default function CountryGuide() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        title={`${country.name} Travel Guide`}
+        description={seoDescription}
+        path={canonicalPath}
+        image={topPicks[0]?.photo_url}
+        type="article"
+        jsonLd={seoJsonLd}
+      />
       {/* ─── Nav ─── */}
       <motion.nav
         initial={{ opacity: 0 }}

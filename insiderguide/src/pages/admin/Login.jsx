@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import Seo from '../../components/Seo'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -26,6 +27,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
+      <Seo title="Admin" path="/admin/login" noindex />
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <span className="text-[9px] uppercase tracking-[0.3em] text-gold-dim block mb-1">Admin</span>

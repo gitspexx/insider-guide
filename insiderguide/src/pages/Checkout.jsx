@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckoutForm } from '../components/checkout/CheckoutForm'
 import { supabase } from '../lib/supabase'
+import Seo from '../components/Seo'
 
 // IG tier pricing — these MUST stay in sync with the BCAX Stripe Prices
 // (insiderguide_featured = $200, insiderguide_partner = $500). bcax-charge in
@@ -145,6 +146,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen text-text">
+      <Seo title="Checkout" path="/checkout" noindex />
       {/* Sticky header */}
       <header className="sticky top-0 z-10 border-b border-border" style={{ background: 'rgba(11, 10, 8, 0.72)', backdropFilter: 'blur(16px) saturate(1.2)', WebkitBackdropFilter: 'blur(16px) saturate(1.2)' }}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">

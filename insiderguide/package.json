@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build:legal": "node scripts/build-legal.mjs",
-    "prebuild": "npm run build:legal",
+    "build:seo": "node scripts/build-seo.mjs",
+    "prebuild": "npm run build:legal && npm run build:seo",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
