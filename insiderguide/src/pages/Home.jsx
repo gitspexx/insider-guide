@@ -27,13 +27,24 @@ export default function Home() {
   useEffect(() => {
     const v = heroVideoRef.current
     if (!v) return
+    // Keep the lightweight WebP poster as the LCP; only fetch the hero loop
+    // after first paint, and skip it entirely for reduced-motion / data-saver
+    // users. preload="none" means nothing downloads until play() is called.
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const saveData = navigator.connection?.saveData
+    if (reduceMotion || saveData) return
     const tryPlay = () => {
       const p = v.play()
       if (p && typeof p.catch === 'function') p.catch(() => {})
     }
-    tryPlay()
+    const ric = window.requestIdleCallback
+    const id = ric ? ric(tryPlay, { timeout: 2000 }) : setTimeout(tryPlay, 400)
     v.addEventListener('canplay', tryPlay)
-    return () => v.removeEventListener('canplay', tryPlay)
+    return () => {
+      v.removeEventListener('canplay', tryPlay)
+      if (ric && window.cancelIdleCallback) window.cancelIdleCallback(id)
+      else clearTimeout(id)
+    }
   }, [])
 
   useEffect(() => {
@@ -214,8 +225,9 @@ export default function Home() {
         <video
           ref={heroVideoRef}
           src="/hero-reel.mp4"
-          poster="/hero-reel.jpg"
-          autoPlay loop muted playsInline
+          poster="/hero-reel.webp"
+          loop muted playsInline
+          preload="none"
           disablePictureInPicture
           controls={false}
           className="absolute inset-0 w-full h-full object-cover"
