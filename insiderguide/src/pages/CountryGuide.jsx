@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import BusinessCard from '../components/BusinessCard'
 import EmailCapture from '../components/EmailCapture'
+import EmailCapturePopup from '../components/EmailCapturePopup'
 import Seo, { SITE_URL, SITE_NAME } from '../components/Seo'
 
 function getMainCity(city) {
@@ -411,6 +412,9 @@ export default function CountryGuide() {
       <section className="max-w-[1120px] mx-auto px-6 pb-16">
         <EmailCapture countrySlug={slug} />
       </section>
+
+      {/* Soft email-capture popup (delay / exit-intent, once per session) */}
+      <EmailCapturePopup countrySlug={slug} />
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
