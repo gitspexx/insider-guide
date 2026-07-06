@@ -144,12 +144,36 @@ export default function AdminCountry() {
     }
   }
 
-  const filtered = businesses.filter((b) => {
-    if (filterCategory !== 'all' && b.category !== filterCategory) return false
-    if (filterTier !== 'all' && b.tier !== filterTier) return false
-    if (filterStatus !== 'all' && b.outreach_status !== filterStatus) return false
-    return true
-  })
+  function toggleTopPick(biz) {
+    if (biz.top_pick_rank != null) {
+      updateField(biz.id, 'top_pick_rank', null)
+    } else {
+      const maxRank = businesses.reduce(
+        (m, b) => (b.top_pick_rank != null && b.top_pick_rank > m ? b.top_pick_rank : m),
+        0,
+      )
+      updateField(biz.id, 'top_pick_rank', maxRank + 1)
+    }
+  }
+
+  const topPickCount = businesses.filter((b) => b.top_pick_rank != null).length
+
+  const filtered = businesses
+    .filter((b) => {
+      if (filterCategory !== 'all' && b.category !== filterCategory) return false
+      if (filterTier === 'top_picks') {
+        if (b.top_pick_rank == null) return false
+      } else if (filterTier !== 'all' && b.tier !== filterTier) return false
+      if (filterStatus !== 'all' && b.outreach_status !== filterStatus) return false
+      return true
+    })
+    .sort((a, b) => {
+      const ar = a.top_pick_rank, br = b.top_pick_rank
+      if (ar != null && br != null) return ar - br
+      if (ar != null) return -1
+      if (br != null) return 1
+      return (a.name || '').localeCompare(b.name || '')
+    })
 
   if (loading) {
     return (
@@ -218,6 +242,7 @@ export default function AdminCountry() {
           className="bg-bg-card border border-border rounded-sm px-3 py-1.5 text-xs text-white focus:border-gold/30 focus:outline-none"
         >
           <option value="all">All Tiers</option>
+          <option value="top_picks">★ Top Picks</option>
           {TIER_OPTIONS.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -233,7 +258,7 @@ export default function AdminCountry() {
           ))}
         </select>
         <span className="text-[10px] text-text-dim uppercase tracking-wider self-center ml-auto">
-          {filtered.length} of {businesses.length} businesses
+          {filtered.length} of {businesses.length} · <span className="text-gold">{topPickCount} ★ top picks</span>
         </span>
       </div>
 
@@ -278,6 +303,7 @@ export default function AdminCountry() {
                     className="accent-gold cursor-pointer"
                   />
                 </th>
+                <th className="text-center px-2 py-3" title="Top pick — shows on the country page">★</th>
                 <th className="text-left px-4 py-3">Name</th>
                 <th className="text-left px-3 py-3">Category</th>
                 <th className="text-left px-3 py-3">Tier</th>
@@ -298,6 +324,25 @@ export default function AdminCountry() {
                       onChange={() => toggleSelect(biz.id)}
                       className="accent-gold cursor-pointer"
                     />
+                  </td>
+                  <td className="px-2 py-3 text-center align-top">
+                    <button
+                      onClick={() => toggleTopPick(biz)}
+                      title={biz.top_pick_rank != null ? 'Remove from top picks' : 'Add to top picks'}
+                      className="cursor-pointer text-base leading-none"
+                    >
+                      <span className={biz.top_pick_rank != null ? 'text-gold' : 'text-text-dim/40 hover:text-text-dim'}>★</span>
+                    </button>
+                    {biz.top_pick_rank != null && (
+                      <input
+                        type="number"
+                        min="1"
+                        value={biz.top_pick_rank}
+                        onChange={(e) => updateField(biz.id, 'top_pick_rank', e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                        className="mt-1 block w-11 mx-auto bg-transparent border border-gold/30 rounded-sm px-1 py-0.5 text-[11px] text-gold text-center focus:outline-none focus:border-gold/60"
+                        title="Order (lower shows first)"
+                      />
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-white font-medium">{biz.name}</span>
@@ -380,7 +425,7 @@ export default function AdminCountry() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-text-dim text-sm">
+                  <td colSpan={10} className="px-4 py-8 text-center text-text-dim text-sm">
                     No businesses match the current filters.
                   </td>
                 </tr>

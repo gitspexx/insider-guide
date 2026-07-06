@@ -76,10 +76,15 @@ export default function CountryGuide() {
     load()
   }, [slug])
 
-  // Top picks: partner/featured tier or recommended
-  const topPicks = businesses.filter(
-    (b) => b.tier === 'partner' || b.tier === 'featured' || b.recommended_badge
-  ).slice(0, 10)
+  // Top picks: manually curated (top_pick_rank) when the country has any,
+  // otherwise fall back to tier/recommended so uncurated countries still show.
+  const curatedPicks = businesses
+    .filter((b) => b.top_pick_rank != null)
+    .sort((a, b) => a.top_pick_rank - b.top_pick_rank)
+  const topPicks = (curatedPicks.length > 0
+    ? curatedPicks
+    : businesses.filter((b) => b.tier === 'partner' || b.tier === 'featured' || b.recommended_badge)
+  ).slice(0, 12)
 
   const topPickIds = new Set(topPicks.map((b) => b.id))
 
