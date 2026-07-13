@@ -4,6 +4,8 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { themeToCssVars, PALETTES } from '../lib/themes'
 import BusinessCard from '../components/BusinessCard'
+import CountryCard from '../components/CountryCard'
+import PaywallModal from '../components/PaywallModal'
 import EmailCapturePopup from '../components/EmailCapturePopup'
 import Seo from '../components/Seo'
 
@@ -25,6 +27,10 @@ export default function CreatorPage({ handle: handleProp }) {
   const [activeCountry, setActiveCountry] = useState(null)
   const [activeCategory, setActiveCategory] = useState(null)
   const [showMap, setShowMap] = useState(false)
+  // Country-guides catalog (founding creator only, gated by show_country_catalog)
+  const [catalogCountries, setCatalogCountries] = useState([])
+  const [catalogCounts, setCatalogCounts] = useState({})
+  const [paywallCountry, setPaywallCountry] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -65,6 +71,45 @@ export default function CreatorPage({ handle: handleProp }) {
     load()
     return () => { cancelled = true }
   }, [handle])
+
+  // Country-guides catalog — the same browsing experience that used to live on
+  // the homepage, now shown only under the founding creator. Fetched ONLY when
+  // show_country_catalog is true, so normal creators pay for no extra query.
+  useEffect(() => {
+    if (!creator?.show_country_catalog) return
+    let cancelled = false
+    async function loadCatalog() {
+      const { data: countryData, error } = await supabase
+        .from('countries').select('*').order('name')
+      if (cancelled || error) return
+      setCatalogCountries(countryData || [])
+      // Paginate all businesses to tally per-country place counts.
+      let allBiz = []
+      let offset = 0
+      while (true) {
+        const { data, error: bizErr } = await supabase
+          .from('businesses').select('country_id').range(offset, offset + 999)
+        if (cancelled) return
+        if (bizErr || !data || data.length === 0) break
+        allBiz = allBiz.concat(data)
+        if (data.length < 1000) break
+        offset += 1000
+      }
+      if (cancelled) return
+      const map = {}
+      allBiz.forEach((b) => { map[b.country_id] = (map[b.country_id] || 0) + 1 })
+      setCatalogCounts(map)
+    }
+    loadCatalog()
+    return () => { cancelled = true }
+  }, [creator?.show_country_catalog])
+
+  // 3 tiers, published-first (region filter intentionally dropped — simple grid):
+  // 1. Published = open guides (clickable). 2. Unpublished + businesses = DM
+  // paywall. 3. Unpublished + 0 businesses = Coming Soon.
+  const catalogOpen = catalogCountries.filter((c) => c.published)
+  const catalogScraped = catalogCountries.filter((c) => !c.published && catalogCounts[c.id] > 0)
+  const catalogComingSoon = catalogCountries.filter((c) => !c.published && !catalogCounts[c.id])
 
   const countries = useMemo(() => {
     const map = new Map()
@@ -113,6 +158,12 @@ export default function CreatorPage({ handle: handleProp }) {
   }
 
   const accent = (PALETTES[creator.theme?.palette] || PALETTES.gold).accent
+
+  // localStorage grant check (mirrors the old homepage paywall gate).
+  function hasAccess(slug) {
+    const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
+    return grants.includes(slug)
+  }
 
   return (
     <div style={themeToCssVars(creator.theme)} className="min-h-screen">
@@ -201,6 +252,93 @@ export default function CreatorPage({ handle: handleProp }) {
           </Suspense>
         </div>
       </div>
+
+      {/* ─── Country guides catalog (founding creator only) ─── */}
+      {creator.show_country_catalog && catalogCountries.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 pb-20">
+          <div className="gradient-divider mb-10" />
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-2 h-2 rounded-full bg-accent/50" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              {creator.display_name}'s country guides
+            </span>
+          </div>
+
+          {catalogOpen.length > 0 && (
+            <div className="mb-10">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-2 h-2 rounded-full bg-green-500/60" />
+                <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">Available guides</span>
+                <span className="text-[10px] text-text-dim/50">{catalogOpen.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {catalogOpen.map((country, index) => (
+                  <CountryCard
+                    key={country.id}
+                    country={country}
+                    count={catalogCounts[country.id] || 0}
+                    locked={false}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {catalogScraped.length > 0 && (
+            <div className="mb-10">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-2 h-2 rounded-full bg-accent/50" />
+                <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">DM to unlock</span>
+                <span className="text-[10px] text-text-dim/50">{catalogScraped.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {catalogScraped.map((country, index) => (
+                  <CountryCard
+                    key={country.id}
+                    country={country}
+                    count={catalogCounts[country.id] || 0}
+                    locked={!hasAccess(country.slug)}
+                    onLockedClick={() => setPaywallCountry(country)}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {catalogComingSoon.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-5">
+                <span className="w-2 h-2 rounded-full bg-text-dim/30" />
+                <span className="text-[11px] tracking-[0.12em] uppercase text-text-dim font-light">Coming soon</span>
+                <span className="text-[10px] text-text-dim/50">{catalogComingSoon.length}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {catalogComingSoon.map((country, index) => (
+                  <CountryCard
+                    key={country.id}
+                    country={country}
+                    count={0}
+                    locked={true}
+                    onLockedClick={() => setPaywallCountry(country)}
+                    index={index}
+                    comingSoon
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {paywallCountry && (
+        <PaywallModal
+          country={paywallCountry}
+          onClose={() => setPaywallCountry(null)}
+          hasData={!!catalogCounts[paywallCountry.id]}
+        />
+      )}
 
       {creator.email_capture_enabled && (
         <EmailCapturePopup

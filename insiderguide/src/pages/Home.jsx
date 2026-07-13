@@ -2,11 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import CountryCard from '../components/CountryCard'
-import PaywallModal from '../components/PaywallModal'
 import Seo, { SITE_URL, SITE_NAME } from '../components/Seo'
-
-const REGION_ORDER = ['South America', 'Central America', 'Caribbean', 'Europe', 'Asia', 'Middle East', 'Africa']
 
 // Brand logos via 21st-magic logo_search (rendered as raw SVG to avoid JSX attr issues).
 const SOCIAL = [
@@ -15,13 +11,44 @@ const SOCIAL = [
   { name: 'YouTube', svg: `<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" viewBox="0 0 256 180"><path fill="red" d="M250.346 28.075A32.18 32.18 0 0 0 227.69 5.418C207.824 0 127.87 0 127.87 0S47.912.164 28.046 5.582A32.18 32.18 0 0 0 5.39 28.24c-6.009 35.298-8.34 89.084.165 122.97a32.18 32.18 0 0 0 22.656 22.657c19.866 5.418 99.822 5.418 99.822 5.418s79.955 0 99.82-5.418a32.18 32.18 0 0 0 22.657-22.657c6.338-35.348 8.291-89.1-.164-123.134Z"/><path fill="#FFF" d="m102.421 128.06 66.328-38.418-66.328-38.418z"/></svg>` },
 ]
 
+// "How it works" steps. Icons are inline Lucide-style stroke SVG (24×24, no fills).
+const STEPS = [
+  {
+    title: 'Saved on the ground',
+    body: "Every spot comes from a creator's own Google Maps — places they actually ate, stayed and filmed. No algorithms, no paid rankings.",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Browse by creator',
+    body: 'Open a creator’s page and explore their spots by country, with their personal notes and a live map.',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" />
+        <circle cx="12" cy="12" r="10" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Businesses join the map',
+    body: 'Restaurants, hotels and tours can partner with the creators who already recommend places like theirs.',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m11 17 2 2a1 1 0 1 0 3-3" />
+        <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" />
+        <path d="m21 3 1 11h-2" />
+        <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
+        <path d="M3 4h8" />
+      </svg>
+    ),
+  },
+]
+
 export default function Home() {
-  const [allCountries, setAllCountries] = useState([])
-  const [counts, setCounts] = useState({})
-  const [loading, setLoading] = useState(true)
-  const [paywallCountry, setPaywallCountry] = useState(null)
-  const [activeRegion, setActiveRegion] = useState('all')
-  const [query, setQuery] = useState('')
   const [creators, setCreators] = useState([])
   const heroVideoRef = useRef(null)
 
@@ -46,51 +73,6 @@ export default function Home() {
       if (ric && window.cancelIdleCallback) window.cancelIdleCallback(id)
       else clearTimeout(id)
     }
-  }, [])
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const { data: countryData, error: countryError } = await supabase
-          .from('countries')
-          .select('*')
-          .order('name')
-
-        if (countryError) {
-          console.error('Failed to load countries:', countryError)
-          setLoading(false)
-          return
-        }
-
-        setAllCountries(countryData || [])
-
-        // Paginate to get all businesses
-        let allBiz = []
-        let offset = 0
-        while (true) {
-          const { data, error } = await supabase
-            .from('businesses')
-            .select('country_id')
-            .range(offset, offset + 999)
-          if (error) { console.error('Failed to load businesses:', error); break }
-          if (!data || data.length === 0) break
-          allBiz = allBiz.concat(data)
-          if (data.length < 1000) break
-          offset += 1000
-        }
-
-        const map = {}
-        allBiz.forEach((b) => {
-          map[b.country_id] = (map[b.country_id] || 0) + 1
-        })
-        setCounts(map)
-      } catch (err) {
-        console.error('Home load error:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
   }, [])
 
   useEffect(() => {
@@ -141,75 +123,6 @@ export default function Home() {
     load()
     return () => { cancelled = true }
   }, [])
-
-  // 3 tiers:
-  // 1. Published = open guides (clickable, full access)
-  // 2. Unpublished + has businesses = scraped, DM paywall
-  // 3. Unpublished + 0 businesses = not scraped, Coming Soon
-  const openCountries = allCountries.filter((c) => c.published)
-  const scrapedCountries = allCountries.filter((c) => !c.published && counts[c.id] > 0)
-  const comingSoonCountries = allCountries.filter((c) => !c.published && !counts[c.id])
-
-  function hasAccess(slug) {
-    const grants = JSON.parse(localStorage.getItem('access_grants') || '[]')
-    return grants.includes(slug)
-  }
-
-  // Regions
-  const regions = [...new Set(allCountries.map((c) => c.region).filter(Boolean))]
-    .sort((a, b) => {
-      const ai = REGION_ORDER.indexOf(a)
-      const bi = REGION_ORDER.indexOf(b)
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-    })
-
-  // Filter by region + optional name query
-  function filterByRegion(list) {
-    const q = query.trim().toLowerCase()
-    let out = activeRegion === 'all' ? list : list.filter((c) => c.region === activeRegion)
-    if (q) out = out.filter((c) => (c.name || '').toLowerCase().includes(q))
-    return out
-  }
-
-  // Group a list by region
-  function groupByRegion(list) {
-    const groups = {}
-    list.forEach((c) => {
-      const r = c.region || 'Other'
-      if (!groups[r]) groups[r] = []
-      groups[r].push(c)
-    })
-    return Object.entries(groups).sort((a, b) => {
-      const ai = REGION_ORDER.indexOf(a[0])
-      const bi = REGION_ORDER.indexOf(b[0])
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-    })
-  }
-
-  const totalPlaces = Object.values(counts).reduce((s, c) => s + c, 0)
-  const popular = [...allCountries]
-    .filter((c) => counts[c.id] > 0)
-    .sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0))
-    .slice(0, 5)
-  const filteredOpen = filterByRegion(openCountries)
-  const filteredScraped = filterByRegion(scrapedCountries)
-  const filteredComingSoon = filterByRegion(comingSoonCountries)
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="w-8 h-[1px] bg-accent/40" />
-          <span className="text-text-dim text-[11px] tracking-[0.2em] uppercase font-light">Loading</span>
-        </motion.div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen">
@@ -283,66 +196,26 @@ export default function Home() {
               Travelers don't trust star ratings — they trust the people they follow. Browse the exact places creators saved on their own maps.
             </p>
 
-            {/* primary CTA (creators) + country search */}
-            <div className="flex flex-col sm:flex-row gap-3 max-w-xl mb-5">
+            {/* CTA row: browse creators (primary) + for businesses (ghost) */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <a
                 href="#creators"
                 onClick={(e) => { e.preventDefault(); document.getElementById('creators')?.scrollIntoView({ behavior: 'smooth' }) }}
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-accent text-bg text-[12px] tracking-[0.16em] uppercase font-medium hover:bg-accent/90 transition-all duration-300 no-underline whitespace-nowrap order-1 sm:order-none"
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-accent text-bg text-[12px] tracking-[0.16em] uppercase font-medium hover:bg-accent/90 transition-all duration-300 no-underline whitespace-nowrap"
               >
                 Browse creators <span aria-hidden="true">→</span>
               </a>
-              <div className="relative flex-1 order-2 sm:order-none">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={`Search ${allCountries.length} countries…`}
-                  aria-label="Search countries"
-                  className="w-full pl-4 pr-9 py-3.5 rounded-lg bg-bg-card/80 backdrop-blur border border-border-hover text-text text-sm placeholder:text-text-dim focus:outline-none focus:border-accent/50 transition-colors duration-300"
-                />
-                {query && (
-                  <button type="button" onClick={() => setQuery('')} aria-label="Clear search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-accent text-sm cursor-pointer">✕</button>
-                )}
-              </div>
+              <a
+                href="/partner"
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border text-text-secondary text-[12px] tracking-[0.16em] uppercase font-light hover:border-border-hover hover:text-text hover:bg-bg-elevated transition-all duration-300 no-underline whitespace-nowrap"
+              >
+                For businesses
+              </a>
             </div>
 
-            {/* popular quick-jumps */}
-            {popular.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-8">
-                <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/70 mr-1">Popular</span>
-                {popular.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => { setQuery(c.name); document.getElementById('guides')?.scrollIntoView({ behavior: 'smooth' }) }}
-                    className="px-3 py-1.5 rounded-full border border-border text-[11px] text-text-secondary hover:text-accent hover:border-accent/30 transition-colors cursor-pointer"
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* stats + social proof */}
+            {/* social proof */}
             <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-6 border-t border-border/60">
-              <div className="flex items-center gap-6">
-                <div>
-                  <span className="font-display text-2xl text-text">{allCountries.length}</span>
-                  <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Countries</span>
-                </div>
-                <div className="w-px h-8 bg-border" />
-                <div>
-                  <span className="font-display text-2xl text-text">{totalPlaces.toLocaleString()}</span>
-                  <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Curated places</span>
-                </div>
-                <div className="w-px h-8 bg-border" />
-                <div>
-                  <span className="font-display text-2xl text-text">{regions.length}</span>
-                  <span className="text-[10px] text-text-dim tracking-[0.1em] uppercase block mt-0.5 font-light">Regions</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 sm:ml-auto">
+              <div className="flex items-center gap-3">
                 <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/60 mr-1">Creators on</span>
                 {SOCIAL.map((s) => (
                   <span
@@ -412,186 +285,61 @@ export default function Home() {
               </Link>
             ))}
           </div>
-
-          <p className="text-text-dim text-xs font-light mt-8">
-            Are you a travel creator?{' '}
-            <a
-              href="https://instagram.com/alexspexx"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent/80 hover:text-accent transition-colors"
-            >
-              DM @alexspexx for early access →
-            </a>
-          </p>
         </section>
       )}
 
-      {/* ─── Browse by country ─── */}
-      <section id="guides" className="max-w-[1120px] mx-auto px-6 pt-12 pb-4 scroll-mt-16">
-        <div className="flex items-center gap-3 mb-6">
+      {/* ─── How it works ─── */}
+      <section className="max-w-[1120px] mx-auto px-6 pt-16 pb-16">
+        <div className="flex items-center gap-3 mb-8">
           <span className="w-2 h-2 rounded-full bg-accent/50" />
           <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
-            Browse by country
+            What is Insider Guide
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveRegion('all')}
-            className={`px-3.5 py-2 text-[11px] tracking-[0.1em] uppercase border rounded-lg transition-all duration-300 cursor-pointer font-light focus-visible:outline-none ${
-              activeRegion === 'all'
-                ? 'bg-accent/10 border-accent/25 text-accent'
-                : 'border-border text-text-dim hover:text-text-secondary hover:border-border-hover hover:bg-bg-elevated'
-            }`}
-          >
-            All ({allCountries.length})
-          </button>
-          {regions.map((region) => {
-            const count = allCountries.filter((c) => c.region === region).length
-            return (
-              <button
-                key={region}
-                onClick={() => setActiveRegion(activeRegion === region ? 'all' : region)}
-                className={`px-3.5 py-2 text-[11px] tracking-[0.1em] uppercase border rounded-lg transition-all duration-300 cursor-pointer font-light focus-visible:outline-none ${
-                  activeRegion === region
-                    ? 'bg-accent/10 border-accent/25 text-accent'
-                    : 'border-border text-text-dim hover:text-text-secondary hover:border-border-hover hover:bg-bg-elevated'
-                }`}
-              >
-                {region} ({count})
-              </button>
-            )
-          })}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
+          {STEPS.map((step, i) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="flex flex-col gap-3"
+            >
+              <span className="text-accent">{step.icon}</span>
+              <h3 className="font-display text-[1.4rem] leading-tight text-text">
+                {step.title}
+              </h3>
+              <p className="text-text-secondary text-sm leading-relaxed">
+                {i === STEPS.length - 1 ? (
+                  <>
+                    Restaurants, hotels and tours can{' '}
+                    <a href="/partner" className="text-accent hover:text-accent/80 transition-colors">
+                      partner with the creators who already recommend places like theirs
+                    </a>
+                    .
+                  </>
+                ) : (
+                  step.body
+                )}
+              </p>
+            </motion.div>
+          ))}
         </div>
+
+        <p className="text-text-dim text-xs font-light mt-12">
+          Are you a travel creator?{' '}
+          <a
+            href="https://instagram.com/alexspexx"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent/80 hover:text-accent transition-colors"
+          >
+            DM @alexspexx for early access →
+          </a>
+        </p>
       </section>
-
-      {/* ─── 1. Open Guides ─── */}
-      {filteredOpen.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pt-8 pb-6">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="w-2 h-2 rounded-full bg-green-500/60" />
-            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
-              Available Guides
-            </span>
-            <span className="text-[10px] text-text-dim/50">{filteredOpen.length}</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredOpen.map((country, index) => (
-              <CountryCard
-                key={country.id}
-                country={country}
-                count={counts[country.id] || 0}
-                locked={false}
-                index={index}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─── 2. Scraped — DM Paywall ─── */}
-      {filteredScraped.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-6">
-          <div className="gradient-divider mb-8" />
-          <div className="flex items-center gap-3 mb-5">
-            <span className="w-2 h-2 rounded-full bg-accent/50" />
-            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
-              DM to Unlock
-            </span>
-            <span className="text-[10px] text-text-dim/50">{filteredScraped.length}</span>
-          </div>
-
-          {activeRegion === 'all' ? (
-            // Group by region
-            groupByRegion(filteredScraped).map(([region, countries]) => (
-              <div key={region} className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/60 font-light">{region}</span>
-                  <div className="flex-1 h-px bg-border/50" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {countries.map((country, index) => (
-                    <CountryCard
-                      key={country.id}
-                      country={country}
-                      count={counts[country.id] || 0}
-                      locked={!hasAccess(country.slug)}
-                      onLockedClick={() => setPaywallCountry(country)}
-                      index={index}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredScraped.map((country, index) => (
-                <CountryCard
-                  key={country.id}
-                  country={country}
-                  count={counts[country.id] || 0}
-                  locked={!hasAccess(country.slug)}
-                  onLockedClick={() => setPaywallCountry(country)}
-                  index={index}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ─── 3. Coming Soon ─── */}
-      {filteredComingSoon.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-16">
-          <div className="gradient-divider mb-8" />
-          <div className="flex items-center gap-3 mb-5">
-            <span className="w-2 h-2 rounded-full bg-text-dim/30" />
-            <span className="text-[11px] tracking-[0.12em] uppercase text-text-dim font-light">
-              Coming Soon
-            </span>
-            <span className="text-[10px] text-text-dim/50">{filteredComingSoon.length}</span>
-          </div>
-
-          {activeRegion === 'all' ? (
-            groupByRegion(filteredComingSoon).map(([region, countries]) => (
-              <div key={region} className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[10px] tracking-[0.12em] uppercase text-text-dim/60 font-light">{region}</span>
-                  <div className="flex-1 h-px bg-border/50" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {countries.map((country, index) => (
-                    <CountryCard
-                      key={country.id}
-                      country={country}
-                      count={0}
-                      locked={true}
-                      onLockedClick={() => setPaywallCountry(country)}
-                      index={index}
-                      comingSoon
-                    />
-                  ))}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredComingSoon.map((country, index) => (
-                <CountryCard
-                  key={country.id}
-                  country={country}
-                  count={0}
-                  locked={true}
-                  onLockedClick={() => setPaywallCountry(country)}
-                  index={index}
-                  comingSoon
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">
@@ -628,14 +376,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
-      {paywallCountry && (
-        <PaywallModal
-          country={paywallCountry}
-          onClose={() => setPaywallCountry(null)}
-          hasData={!!counts[paywallCountry.id]}
-        />
-      )}
     </div>
   )
 }
