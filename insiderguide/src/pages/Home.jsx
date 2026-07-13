@@ -119,11 +119,24 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      const { data } = await supabase
-        .from('creators')
-        .select('handle,display_name,avatar_url')
-        .eq('status', 'active')
-      if (!cancelled && data) setCreators(data)
+      // Active creators + their public (visible) spot counts. anon RLS on
+      // creator_saves only returns rows where hidden=false AND the creator is
+      // active, so a bare creator_id select + client-side tally is exact.
+      const [creatorsRes, savesRes] = await Promise.all([
+        supabase
+          .from('creators')
+          .select('id,handle,display_name,avatar_url,bio')
+          .eq('status', 'active'),
+        supabase.from('creator_saves').select('creator_id'),
+      ])
+      if (cancelled || !creatorsRes.data) return
+      const spotCounts = {}
+      for (const s of savesRes.data || []) {
+        spotCounts[s.creator_id] = (spotCounts[s.creator_id] || 0) + 1
+      }
+      setCreators(
+        creatorsRes.data.map((c) => ({ ...c, spots: spotCounts[c.id] || 0 }))
+      )
     }
     load()
     return () => { cancelled = true }
@@ -259,20 +272,27 @@ export default function Home() {
             className="max-w-2xl"
           >
             <span className="text-[11px] tracking-[0.18em] uppercase text-accent/80 block mb-5">
-              A network of travel creators
+              The Insider Guide network
             </span>
 
             <h1 className="font-display text-[clamp(3rem,7vw,6rem)] leading-[0.9] tracking-[-0.02em] text-text mb-5">
-              The Insider <span className="text-accent-gradient italic">Guide</span>
+              Real spots, saved by real <span className="text-accent-gradient italic">travel creators</span>.
             </h1>
 
             <p className="text-[clamp(1.1rem,2vw,1.35rem)] text-text-secondary leading-relaxed max-w-lg mb-8">
-              Curated travel guides by creators who've actually been there. Real lists, real recommendations — no algorithms.
+              Travelers don't trust star ratings — they trust the people they follow. Browse the exact places creators saved on their own maps.
             </p>
 
-            {/* search + primary CTA */}
+            {/* primary CTA (creators) + country search */}
             <div className="flex flex-col sm:flex-row gap-3 max-w-xl mb-5">
-              <div className="relative flex-1">
+              <a
+                href="#creators"
+                onClick={(e) => { e.preventDefault(); document.getElementById('creators')?.scrollIntoView({ behavior: 'smooth' }) }}
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-accent text-bg text-[12px] tracking-[0.16em] uppercase font-medium hover:bg-accent/90 transition-all duration-300 no-underline whitespace-nowrap order-1 sm:order-none"
+              >
+                Browse creators <span aria-hidden="true">→</span>
+              </a>
+              <div className="relative flex-1 order-2 sm:order-none">
                 <input
                   type="text"
                   value={query}
@@ -286,13 +306,6 @@ export default function Home() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-accent text-sm cursor-pointer">✕</button>
                 )}
               </div>
-              <a
-                href="#guides"
-                onClick={(e) => { e.preventDefault(); document.getElementById('guides')?.scrollIntoView({ behavior: 'smooth' }) }}
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-accent text-bg text-[12px] tracking-[0.16em] uppercase font-medium hover:bg-accent/90 transition-all duration-300 no-underline whitespace-nowrap"
-              >
-                Explore guides <span aria-hidden="true">→</span>
-              </a>
             </div>
 
             {/* popular quick-jumps */}
@@ -348,8 +361,80 @@ export default function Home() {
         <div className="shimmer-line max-w-[1120px] mx-auto absolute bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)]" />
       </section>
 
-      {/* ─── Region Filter ─── */}
+      {/* ─── Creators (spotlight — first section under hero) ─── */}
+      {creators.length > 0 && (
+        <section id="creators" className="max-w-[1120px] mx-auto px-6 pt-14 pb-6 scroll-mt-16">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-2 h-2 rounded-full bg-accent/50" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              The creators
+            </span>
+            <span className="text-[10px] text-text-dim/50">{creators.length}</span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {creators.map((creator) => (
+              <Link
+                key={creator.handle}
+                to={`/${creator.handle}`}
+                className="group flex flex-col items-center text-center gap-3 p-5 rounded-2xl border border-border bg-bg-card/50 hover:border-accent/30 hover:bg-bg-elevated transition-colors duration-200 no-underline cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              >
+                {creator.avatar_url ? (
+                  <img
+                    src={creator.avatar_url}
+                    alt={creator.display_name || creator.handle}
+                    width={80}
+                    height={80}
+                    loading="lazy"
+                    className="w-20 h-20 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <span className="text-accent text-2xl font-display leading-none">
+                      {(creator.display_name || creator.handle).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="font-display text-xl text-text group-hover:text-accent transition-colors leading-tight">
+                    {creator.display_name || creator.handle}
+                  </span>
+                  <span className="text-text-dim text-xs font-light">@{creator.handle}</span>
+                </div>
+                <span className="text-[11px] tracking-[0.1em] uppercase text-accent/70 font-light">
+                  {creator.spots > 0 ? `${creator.spots.toLocaleString()} spots` : 'New'}
+                </span>
+                {creator.bio && (
+                  <p className="text-text-dim/80 text-xs leading-relaxed line-clamp-2 max-w-[22ch]">
+                    {creator.bio}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          <p className="text-text-dim text-xs font-light mt-8">
+            Are you a travel creator?{' '}
+            <a
+              href="https://instagram.com/alexspexx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent/80 hover:text-accent transition-colors"
+            >
+              DM @alexspexx for early access →
+            </a>
+          </p>
+        </section>
+      )}
+
+      {/* ─── Browse by country ─── */}
       <section id="guides" className="max-w-[1120px] mx-auto px-6 pt-12 pb-4 scroll-mt-16">
+        <div className="flex items-center gap-3 mb-6">
+          <span className="w-2 h-2 rounded-full bg-accent/50" />
+          <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+            Browse by country
+          </span>
+        </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setActiveRegion('all')}
@@ -505,51 +590,6 @@ export default function Home() {
               ))}
             </div>
           )}
-        </section>
-      )}
-
-      {/* ─── Browse by creator ─── */}
-      {creators.length > 0 && (
-        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-12">
-          <div className="gradient-divider mb-8" />
-          <div className="flex items-center gap-3 mb-5">
-            <span className="w-2 h-2 rounded-full bg-accent/50" />
-            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
-              Browse by creator
-            </span>
-            <span className="text-[10px] text-text-dim/50">{creators.length}</span>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {creators.map((creator) => (
-              <Link
-                key={creator.handle}
-                to={`/${creator.handle}`}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-bg-card/60 hover:border-accent/30 hover:bg-bg-elevated transition-all duration-200 no-underline group"
-              >
-                {creator.avatar_url ? (
-                  <img
-                    src={creator.avatar_url}
-                    alt={creator.display_name}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-accent text-lg font-display leading-none">
-                      {(creator.display_name || creator.handle).charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  <span className="text-text text-sm font-light group-hover:text-accent transition-colors leading-snug">
-                    {creator.display_name || creator.handle}
-                  </span>
-                  <span className="text-text-dim text-[11px] font-light">@{creator.handle}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
         </section>
       )}
 
