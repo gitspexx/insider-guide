@@ -1,5 +1,5 @@
 // insiderguide/src/pages/studio/MySpots.jsx
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
@@ -29,7 +29,6 @@ async function fetchSaves() {
 export default function MySpots() {
   const [saves, setSaves] = useState(null)
   const [savingId, setSavingId] = useState(null)
-  const reloadRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -37,7 +36,6 @@ export default function MySpots() {
       const result = await fetchSaves()
       if (!cancelled && result !== null) setSaves(result)
     }
-    reloadRef.current = load
     load()
     return () => { cancelled = true }
   }, [])

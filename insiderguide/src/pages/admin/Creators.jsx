@@ -54,7 +54,7 @@ export default function AdminCreators() {
         <input required type="email" placeholder="Email" value={form.email}
                onChange={(e) => setForm({ ...form, email: e.target.value })}
                className="bg-bg border border-border rounded-sm px-3 py-2 text-sm text-white" />
-        <input required placeholder="handle" value={form.handle} pattern="[a-z0-9_.]{3,30}"
+        <input required placeholder="handle" value={form.handle} pattern="[a-z0-9_]{3,30}"
                onChange={(e) => setForm({ ...form, handle: e.target.value.toLowerCase() })}
                className="bg-bg border border-border rounded-sm px-3 py-2 text-sm text-white" />
         <input placeholder="Display name" value={form.display_name}
