@@ -1,12 +1,15 @@
 // insiderguide/src/pages/CreatorPage.jsx
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { themeToCssVars, PALETTES } from '../lib/themes'
 import BusinessCard from '../components/BusinessCard'
-import CreatorMap from '../components/creator/CreatorMap'
 import EmailCapturePopup from '../components/EmailCapturePopup'
 import Seo from '../components/Seo'
+
+// Lazy: maplibre-gl is ~1MB minified — keep it out of the eager public bundle
+// (Home/CountryGuide visitors never pay for it).
+const CreatorMap = lazy(() => import('../components/creator/CreatorMap'))
 
 export default function CreatorPage() {
   const { handle } = useParams()
@@ -168,7 +171,9 @@ export default function CreatorPage() {
           {visible.length === 0 && <p className="text-text-dim text-sm col-span-full">No spots here yet.</p>}
         </div>
         <div className={`h-[420px] md:h-[calc(100vh-140px)] md:sticky md:top-6 ${showMap ? '' : 'hidden md:block'}`}>
-          <CreatorMap spots={mapSpots} accent={accent} onPinClick={onPinClick} />
+          <Suspense fallback={<div className="w-full h-full rounded-xl border border-border bg-bg-card animate-pulse" />}>
+            <CreatorMap spots={mapSpots} accent={accent} onPinClick={onPinClick} />
+          </Suspense>
         </div>
       </div>
 
