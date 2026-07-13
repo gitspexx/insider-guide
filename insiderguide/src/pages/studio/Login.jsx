@@ -1,15 +1,27 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import Seo from '../../components/Seo'
 
 export default function StudioLogin() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
-  async function handleSend(e) {
+  async function handlePassword(e) {
     e.preventDefault()
+    setLoading(true); setError(null)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setError('Wrong email or password.')
+    else navigate('/studio')
+    setLoading(false)
+  }
+
+  async function handleSendLink() {
+    if (!email) { setError('Enter your email first.'); return }
     setLoading(true); setError(null)
     // shouldCreateUser:false = invite-only. Unknown emails get a generic error.
     const { error } = await supabase.auth.signInWithOtp({
@@ -34,17 +46,27 @@ export default function StudioLogin() {
             Check your inbox — we sent you a sign-in link.
           </p>
         ) : (
-          <form onSubmit={handleSend} className="flex flex-col gap-4">
+          <form onSubmit={handlePassword} className="flex flex-col gap-4">
             <input
               type="email" required value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your creator email"
               className="bg-bg-card border border-border rounded-sm px-4 py-3 text-sm text-text placeholder:text-text-dim focus:border-accent/30 focus:outline-none font-body"
             />
+            <input
+              type="password" required value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="bg-bg-card border border-border rounded-sm px-4 py-3 text-sm text-text placeholder:text-text-dim focus:border-accent/30 focus:outline-none font-body"
+            />
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <button type="submit" disabled={loading}
               className="bg-accent text-bg font-body text-sm uppercase tracking-wider py-3 rounded-sm hover:bg-accent/90 transition-colors cursor-pointer disabled:opacity-50">
-              {loading ? 'Sending…' : 'Send sign-in link'}
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+            <button type="button" onClick={handleSendLink} disabled={loading}
+              className="text-xs text-text-dim hover:text-text-secondary cursor-pointer">
+              Email me a sign-in link instead
             </button>
           </form>
         )}
