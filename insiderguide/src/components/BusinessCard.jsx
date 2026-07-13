@@ -13,7 +13,7 @@ const CATEGORY_STYLES = {
 
 const DEFAULT_STYLE = { color: 'text-text-dim', dot: 'bg-text-dim', glow: '' }
 
-export default function BusinessCard({ business, index = 0, isTopPick = false }) {
+export default function BusinessCard({ business, index = 0, isTopPick = false, creatorNote, creatorName = 'Alex' }) {
   const isPartner = business.tier === 'partner'
   const isFeatured = business.tier === 'featured'
   const cat = CATEGORY_STYLES[business.category] || DEFAULT_STYLE
@@ -62,7 +62,11 @@ export default function BusinessCard({ business, index = 0, isTopPick = false })
         </h3>
 
         {/* Description */}
-        {business.description && (
+        {creatorNote ? (
+          <p className="font-editorial italic text-text-secondary text-[14px] leading-relaxed mb-3">
+            &ldquo;{creatorNote}&rdquo;
+          </p>
+        ) : business.description && (
           <p className={`text-[13px] leading-relaxed mb-3 ${
             isPartner ? 'font-editorial italic text-text-secondary text-[14px]' : 'text-text-dim'
           }`}>
@@ -82,7 +86,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false })
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
             <span className="text-[11px] text-accent tracking-[0.08em] uppercase font-light">
-              Recommended by Alex
+              Recommended by {creatorName}
             </span>
           </div>
         )}

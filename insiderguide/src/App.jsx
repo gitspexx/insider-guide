@@ -1,12 +1,14 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AdminRoute from './components/AdminRoute'
+import CreatorRoute from './components/CreatorRoute'
 
 // Eager: public hot path (landing + the two most-hit public pages). These
 // drive first paint / LCP, so they stay in the main chunk.
 import Home from './pages/Home'
 import CountryGuide from './pages/CountryGuide'
 import Partner from './pages/Partner'
+import CreatorPage from './pages/CreatorPage'
 
 // Lazy: checkout pulls the Stripe SDKs, and the admin suite is 12 pages no
 // public visitor ever loads. Splitting them keeps the public bundle small.
@@ -24,6 +26,13 @@ const AdminClassifier = lazy(() => import('./pages/admin/Classifier'))
 const AdminMapsImport = lazy(() => import('./pages/admin/MapsImport'))
 const AdminMapsLinks = lazy(() => import('./pages/admin/MapsLinks'))
 const AdminOpportunities = lazy(() => import('./pages/admin/Opportunities'))
+
+// Lazy: creator studio suite (auth-gated, never loaded by public visitors).
+const StudioLogin = lazy(() => import('./pages/studio/Login'))
+const StudioLayout = lazy(() => import('./pages/studio/StudioLayout'))
+const MySpots = lazy(() => import('./pages/studio/MySpots'))
+const StudioImport = lazy(() => import('./pages/studio/Import'))
+const StudioSettings = lazy(() => import('./pages/studio/Settings'))
 
 function RouteFallback() {
   return (
@@ -44,6 +53,13 @@ export default function App() {
           <Route path="/for-business" element={<Partner />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/@:handle" element={<CreatorPage />} />
+          <Route path="/studio/login" element={<StudioLogin />} />
+          <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
+            <Route index element={<MySpots />} />
+            <Route path="import" element={<StudioImport />} />
+            <Route path="settings" element={<StudioSettings />} />
+          </Route>
           <Route path="/:slug" element={<CountryGuide />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

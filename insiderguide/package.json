@@ -19,6 +19,7 @@
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.36.0",
+    "maplibre-gl": "^5.24.0",
     "papaparse": "^5.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

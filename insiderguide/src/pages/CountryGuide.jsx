@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import BusinessCard from '../components/BusinessCard'
@@ -40,6 +40,7 @@ function SectionHeader({ number, title, subtitle, count }) {
 
 export default function CountryGuide() {
   const { slug } = useParams()
+  const navigate = useNavigate()
   const [country, setCountry] = useState(null)
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
@@ -55,6 +56,18 @@ export default function CountryGuide() {
           .single()
 
         if (countryErr || !countryData) {
+          // Not a country slug — it may be a bare creator handle (e.g. /alex).
+          // Redirect to the canonical /@handle creator page if one exists.
+          const { data: creatorHit } = await supabase
+            .from('creators')
+            .select('handle')
+            .eq('handle', slug.toLowerCase())
+            .eq('status', 'active')
+            .maybeSingle()
+          if (creatorHit) {
+            navigate(`/@${creatorHit.handle}`, { replace: true })
+            return
+          }
           setLoading(false)
           return
         }
@@ -74,7 +87,7 @@ export default function CountryGuide() {
       }
     }
     load()
-  }, [slug])
+  }, [slug, navigate])
 
   // Top picks: manually curated (top_pick_rank) when the country has any,
   // otherwise fall back to tier/recommended so uncurated countries still show.
