@@ -10,7 +10,8 @@
     "prebuild": "npm run build:legal && npm run build:seo",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@gitspexx/spexx-analytics": "^0.1.1",
@@ -18,6 +19,7 @@
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.36.0",
+    "papaparse": "^5.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1"
@@ -34,6 +36,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "tailwindcss": "^4.2.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^3.2.7"
   }
 }
