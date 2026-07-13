@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AdminRoute from './components/AdminRoute'
+import CreatorRoute from './components/CreatorRoute'
 
 // Eager: public hot path (landing + the two most-hit public pages). These
 // drive first paint / LCP, so they stay in the main chunk.
@@ -24,6 +25,14 @@ const AdminClassifier = lazy(() => import('./pages/admin/Classifier'))
 const AdminMapsImport = lazy(() => import('./pages/admin/MapsImport'))
 const AdminMapsLinks = lazy(() => import('./pages/admin/MapsLinks'))
 const AdminOpportunities = lazy(() => import('./pages/admin/Opportunities'))
+const AdminCreators = lazy(() => import('./pages/admin/Creators'))
+
+// Lazy: creator studio suite (auth-gated, never loaded by public visitors).
+const StudioLogin = lazy(() => import('./pages/studio/Login'))
+const StudioLayout = lazy(() => import('./pages/studio/StudioLayout'))
+const MySpots = lazy(() => import('./pages/studio/MySpots'))
+const StudioImport = lazy(() => import('./pages/studio/Import'))
+const StudioSettings = lazy(() => import('./pages/studio/Settings'))
 
 function RouteFallback() {
   return (
@@ -44,6 +53,16 @@ export default function App() {
           <Route path="/for-business" element={<Partner />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          {/* Creator pages have no dedicated route: RR7 cannot param-match a
+              fused "@" prefix (`/@:handle` compiles to a literal). They
+              dispatch through the /:slug catch-all — CountryGuide renders
+              CreatorPage inline on a country miss + creator hit. */}
+          <Route path="/studio/login" element={<StudioLogin />} />
+          <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
+            <Route index element={<MySpots />} />
+            <Route path="import" element={<StudioImport />} />
+            <Route path="settings" element={<StudioSettings />} />
+          </Route>
           <Route path="/:slug" element={<CountryGuide />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -57,6 +76,7 @@ export default function App() {
           <Route path="/admin/subscribers" element={<AdminRoute><AdminSubscribers /></AdminRoute>} />
           <Route path="/admin/businesses/new" element={<AdminRoute><AdminBusinessForm /></AdminRoute>} />
           <Route path="/admin/businesses/:id/edit" element={<AdminRoute><AdminBusinessForm /></AdminRoute>} />
+          <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
           <Route path="/admin/:slug" element={<AdminRoute><AdminCountry /></AdminRoute>} />
         </Routes>
       </Suspense>

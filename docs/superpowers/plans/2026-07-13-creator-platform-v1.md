@@ -1643,8 +1643,13 @@ export default function CreatorPage() {
 
 Add lazy imports following the file's existing pattern, then routes ABOVE the `/:slug` catch-all:
 
+> **AMENDED (routing fix):** RR7 cannot param-match a fused @ prefix (`/@:handle`
+> compiles to a literal — `matchPath('/@:handle','/@alex')` is `null`); creator
+> pages dispatch through `/:slug` (CountryGuide country-miss → CreatorPage inline
+> render; @ stripped so both `/handle` and `/@handle` resolve). There is NO
+> dedicated creator route — only the studio routes below are added:
+
 ```jsx
-<Route path="/@:handle" element={<CreatorPage />} />
 <Route path="/studio/login" element={<StudioLogin />} />
 <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
   <Route index element={<MySpots />} />
@@ -1655,13 +1660,7 @@ Add lazy imports following the file's existing pattern, then routes ABOVE the `/
 
 - [ ] **Step 7: CountryGuide slug fallback**
 
-In `CountryGuide.jsx`, locate the branch where the country lookup returns no row (the current 404/not-found path). Before rendering not-found, check creators and redirect:
-
-```jsx
-const { data: creatorHit } = await supabase
-  .from('creators').select('handle').eq('handle', slug.toLowerCase()).eq('status', 'active').maybeSingle()
-if (creatorHit) { navigate(`/@${creatorHit.handle}`, { replace: true }); return }
-```
+In `CountryGuide.jsx`, locate the branch where the country lookup returns no row (the current 404/not-found path). Before rendering not-found, check creators (strip any leading `@`, lowercase) and on a hit set a `creatorHandle` state var; in render, before the not-found UI, `if (creatorHandle) return <CreatorPage handle={creatorHandle} />` (eager import — both pages are eager). Published-country paths are untouched: the creator query only fires after a country miss.
 
 - [ ] **Step 8: Build + lint + commit**
 

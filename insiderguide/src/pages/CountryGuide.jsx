@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import BusinessCard from '../components/BusinessCard'
+import CreatorPage from './CreatorPage'
 import EmailCapture from '../components/EmailCapture'
 import EmailCapturePopup from '../components/EmailCapturePopup'
 import Seo, { SITE_URL, SITE_NAME } from '../components/Seo'
@@ -41,6 +42,7 @@ function SectionHeader({ number, title, subtitle, count }) {
 export default function CountryGuide() {
   const { slug } = useParams()
   const [country, setCountry] = useState(null)
+  const [creatorHandle, setCreatorHandle] = useState(null)
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -55,10 +57,22 @@ export default function CountryGuide() {
           .single()
 
         if (countryErr || !countryData) {
+          // Not a country slug — it may be a creator handle (/alex or the
+          // /@alex vanity form; RR7 can't param-match a fused @ prefix, so
+          // both arrive here via /:slug). Render CreatorPage inline on a hit.
+          const handle = slug.replace(/^@/, '').toLowerCase()
+          const { data: creatorHit } = await supabase
+            .from('creators')
+            .select('handle')
+            .eq('handle', handle)
+            .eq('status', 'active')
+            .maybeSingle()
+          setCreatorHandle(creatorHit ? creatorHit.handle : null)
           setLoading(false)
           return
         }
 
+        setCreatorHandle(null)
         setCountry(countryData)
         const { data: bizData } = await supabase
           .from('businesses')
@@ -170,6 +184,9 @@ export default function CountryGuide() {
       </div>
     )
   }
+
+  // Creator dispatch: the slug matched an active creator, not a country.
+  if (creatorHandle) return <CreatorPage handle={creatorHandle} />
 
   if (!country) {
     return (

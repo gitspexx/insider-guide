@@ -1,0 +1,7 @@
+project_id = "qbzmsvfphpfgnlztskma"
+
+[functions.invite-creator]
+verify_jwt = true
+
+[functions.enrich-places]
+verify_jwt = false   # called by pg_cron with x-enrich-secret header

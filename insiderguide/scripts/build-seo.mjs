@@ -75,6 +75,19 @@ async function main() {
     return
   }
 
+  // Fetch active creators for canonical /<handle> URLs.
+  let creators = []
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/creators?status=eq.active&select=handle`,
+      { headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` } },
+    )
+    if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`)
+    creators = await res.json()
+  } catch (err) {
+    console.warn(`⚠ build-seo: could not fetch creators (${err.message}). Continuing without creator URLs.`)
+  }
+
   const entries = [
     ...STATIC_ROUTES.map(urlEntry),
     ...countries
@@ -87,6 +100,15 @@ async function main() {
           lastmod: c.created_at ? String(c.created_at).slice(0, 10) : null,
         }),
       ),
+    ...creators
+      .filter((c) => c.handle)
+      .map((c) =>
+        urlEntry({
+          path: `/${c.handle}`,
+          priority: '0.7',
+          changefreq: 'weekly',
+        }),
+      ),
   ]
 
   const xml =
@@ -96,7 +118,7 @@ async function main() {
     '\n</urlset>\n'
 
   writeFileSync(OUT, xml)
-  console.log(`✓ build-seo: wrote sitemap.xml with ${entries.length} URLs (${countries.length} countries) → public/sitemap.xml`)
+  console.log(`✓ build-seo: wrote sitemap.xml with ${entries.length} URLs (${countries.length} countries, ${creators.length} creators) → public/sitemap.xml`)
 }
 
 main()

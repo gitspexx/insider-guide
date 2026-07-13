@@ -22,6 +22,7 @@ export default function Home() {
   const [paywallCountry, setPaywallCountry] = useState(null)
   const [activeRegion, setActiveRegion] = useState('all')
   const [query, setQuery] = useState('')
+  const [creators, setCreators] = useState([])
   const heroVideoRef = useRef(null)
 
   useEffect(() => {
@@ -113,6 +114,19 @@ export default function Home() {
         })
       }
     }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data } = await supabase
+        .from('creators')
+        .select('handle,display_name,avatar_url')
+        .eq('status', 'active')
+      if (!cancelled && data) setCreators(data)
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
 
   // 3 tiers:
@@ -491,6 +505,51 @@ export default function Home() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {/* ─── Browse by creator ─── */}
+      {creators.length > 0 && (
+        <section className="max-w-[1120px] mx-auto px-6 pt-6 pb-12">
+          <div className="gradient-divider mb-8" />
+          <div className="flex items-center gap-3 mb-5">
+            <span className="w-2 h-2 rounded-full bg-accent/50" />
+            <span className="text-[11px] tracking-[0.12em] uppercase text-text-secondary font-light">
+              Browse by creator
+            </span>
+            <span className="text-[10px] text-text-dim/50">{creators.length}</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {creators.map((creator) => (
+              <Link
+                key={creator.handle}
+                to={`/${creator.handle}`}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-bg-card/60 hover:border-accent/30 hover:bg-bg-elevated transition-all duration-200 no-underline group"
+              >
+                {creator.avatar_url ? (
+                  <img
+                    src={creator.avatar_url}
+                    alt={creator.display_name}
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-accent text-lg font-display leading-none">
+                      {(creator.display_name || creator.handle).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-text text-sm font-light group-hover:text-accent transition-colors leading-snug">
+                    {creator.display_name || creator.handle}
+                  </span>
+                  <span className="text-text-dim text-[11px] font-light">@{creator.handle}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

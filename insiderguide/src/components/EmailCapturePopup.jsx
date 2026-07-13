@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
  * writes to `newsletter_subscribers` (source: 'web_popup') — a DB trigger then
  * mirrors the email into the CRM `contacts` table (GrowthOps).
  */
-export default function EmailCapturePopup({ countrySlug }) {
+export default function EmailCapturePopup({ countrySlug, source = 'web_popup', heading }) {
   const seenKey = `ig_popup_seen_${countrySlug || 'all'}`
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
@@ -60,7 +60,7 @@ export default function EmailCapturePopup({ countrySlug }) {
     setSubmitting(true)
     const { error } = await supabase
       .from('newsletter_subscribers')
-      .insert({ email, country_slug: countrySlug, source: 'web_popup' })
+      .insert({ email, country_slug: countrySlug, source })
 
     if (error) {
       setStatus(error.code === '23505' ? 'already' : 'error')
@@ -117,7 +117,7 @@ export default function EmailCapturePopup({ countrySlug }) {
                 Insider Guide · Free
               </div>
               <h3 className="font-display text-[26px] leading-tight text-text mb-2">
-                Never miss the next drop 🗺️
+                {heading || 'Never miss the next drop 🗺️'}
               </h3>
               <p className="text-[13.5px] text-text-dim font-light leading-relaxed mb-5">
                 A new country guide every week — hand-picked maps of where to eat, stay &amp; explore. Free, straight to your inbox, zero spam.
