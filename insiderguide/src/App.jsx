@@ -8,7 +8,6 @@ import CreatorRoute from './components/CreatorRoute'
 import Home from './pages/Home'
 import CountryGuide from './pages/CountryGuide'
 import Partner from './pages/Partner'
-import CreatorPage from './pages/CreatorPage'
 
 // Lazy: checkout pulls the Stripe SDKs, and the admin suite is 12 pages no
 // public visitor ever loads. Splitting them keeps the public bundle small.
@@ -54,7 +53,10 @@ export default function App() {
           <Route path="/for-business" element={<Partner />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
-          <Route path="/@:handle" element={<CreatorPage />} />
+          {/* Creator pages have no dedicated route: RR7 cannot param-match a
+              fused "@" prefix (`/@:handle` compiles to a literal). They
+              dispatch through the /:slug catch-all — CountryGuide renders
+              CreatorPage inline on a country miss + creator hit. */}
           <Route path="/studio/login" element={<StudioLogin />} />
           <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
             <Route index element={<MySpots />} />

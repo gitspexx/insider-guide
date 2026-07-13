@@ -11,8 +11,15 @@ import Seo from '../components/Seo'
 // (Home/CountryGuide visitors never pay for it).
 const CreatorMap = lazy(() => import('../components/creator/CreatorMap'))
 
-export default function CreatorPage() {
-  const { handle } = useParams()
+/**
+ * Public creator page. Reached through the /:slug catch-all (CountryGuide
+ * dispatches here on a country miss + creator hit, passing `handle` as a
+ * prop) — RR7 cannot param-match a fused "@" prefix, so there is no
+ * dedicated /@:handle route. Both /handle and /@handle resolve.
+ */
+export default function CreatorPage({ handle: handleProp }) {
+  const { handle: handleParam } = useParams()
+  const handle = (handleProp ?? handleParam ?? '').replace(/^@/, '').toLowerCase()
   const [creator, setCreator] = useState(undefined) // undefined=loading, null=404
   const [saves, setSaves] = useState([])
   const [activeCountry, setActiveCountry] = useState(null)
@@ -23,21 +30,30 @@ export default function CreatorPage() {
     let cancelled = false
     async function load() {
       const { data: c } = await supabase.from('creators')
-        .select('*').eq('handle', handle.toLowerCase()).eq('status', 'active').maybeSingle()
+        .select('*').eq('handle', handle).eq('status', 'active').maybeSingle()
       if (cancelled) return
       setCreator(c || null)
       if (!c) return
       // No FK embedding through the safe view — parallel fetch + client merge.
-      const [savesRes, bizRes, countriesRes] = await Promise.all([
+      const [savesRes, countriesRes] = await Promise.all([
         supabase.from('creator_saves')
           .select('id, business_id, note, sort, created_at')
           .eq('creator_id', c.id).eq('hidden', false)
           .order('sort').order('created_at', { ascending: false }),
-        supabase.from('creator_saved_businesses').select('*'),
         supabase.from('countries').select('id, name, slug, flag_emoji'),
       ])
       if (cancelled) return
-      const bizMap = new Map((bizRes.data || []).map((b) => [b.id, b]))
+      // Fetch only this creator's businesses from the safe view, chunked to
+      // stay under PostgREST URL-length limits.
+      const ids = [...new Set((savesRes.data || []).map((s) => s.business_id))]
+      let bizRows = []
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: chunk } = await supabase.from('creator_saved_businesses')
+          .select('*').in('id', ids.slice(i, i + 200))
+        if (cancelled) return
+        bizRows = bizRows.concat(chunk || [])
+      }
+      const bizMap = new Map(bizRows.map((b) => [b.id, b]))
       const countryMap = new Map((countriesRes.data || []).map((x) => [x.id, x]))
       setSaves((savesRes.data || [])
         .map((s) => {
@@ -101,7 +117,7 @@ export default function CreatorPage() {
   return (
     <div style={themeToCssVars(creator.theme)} className="min-h-screen">
       <Seo title={`${creator.display_name} — Insider Guide`}
-           description={creator.bio?.slice(0, 155)} path={`/@${creator.handle}`} />
+           description={creator.bio?.slice(0, 155)} path={`/${creator.handle}`} />
 
       <header className="max-w-6xl mx-auto px-4 pt-14 pb-8 text-center">
         {creator.avatar_url && (
