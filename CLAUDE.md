@@ -22,12 +22,30 @@ cd insiderguide && npm run lint     # ESLint
 ```
 insiderguide/src/
   components/     # BusinessCard, CategoryFilter, LocationFilter, PaywallModal,
-                  # EmailCapture, CampaignCreateModal, AdminRoute
-  lib/            # supabase.js
-  pages/          # Home, CountryGuide
+                  # EmailCapture(Popup), CampaignCreateModal, AdminRoute,
+                  # CreatorRoute, creator/CreatorMap (maplibre, lazy chunk)
+  lib/            # supabase.js, themes.js (creator presets), takeoutParser.js
+  pages/          # Home, CountryGuide, CreatorPage
+  pages/studio/   # Login (magic link), StudioLayout, MySpots, Import, Settings
   pages/admin/    # Dashboard, Login, BusinessForm, CSVImport, CampaignDetail,
-                  # Country, OutreachDashboard, Subscribers
+                  # Country, OutreachDashboard, Subscribers, Creators
 ```
+
+## Creator platform (V1, shipped 2026-07-13)
+- Creator pages resolve at bare `/<handle>` AND `/@<handle>` — dispatched through
+  the `/:slug` catch-all (CountryGuide country-miss → CreatorPage inline).
+  React-router v7 CANNOT param-match `/@:handle` — do not re-add that route.
+- Creators (invite-only) may NOT read `businesses` directly. Public reads go
+  through `creator_saved_businesses`; studio reads through `my_saved_businesses`
+  (definer-style column-allowlist views — do NOT add `security_invoker=on`,
+  that would re-hide unpublished stubs). Imports go only through the
+  `preview_import`/`commit_import` SECURITY DEFINER RPCs.
+- Enrichment: `enrich-places` edge fn drained by pg_cron `enrich-places-drain`
+  (*/5 min, secret in `private.enrich_places_ping()`). Requires funded
+  Outscraper account. Failed stubs: reset `enrich_status='pending_enrich',
+  enrich_attempts=0`.
+- Admin edits to creators.handle/status only via `invite-creator` edge fn
+  (column grants block them for the authenticated role by design).
 
 ## Non-negotiable rules
 1. **Env vars passed as Docker build args.** Never hardcode Supabase keys.
