@@ -40,7 +40,7 @@ export default function CreatorPage({ handle: handleProp }) {
           .select('id, business_id, note, sort, created_at')
           .eq('creator_id', c.id).eq('hidden', false)
           .order('sort').order('created_at', { ascending: false }),
-        supabase.from('countries').select('id, name, slug, flag_emoji'),
+        supabase.from('countries').select('id, name, slug, flag_emoji, published'),
       ])
       if (cancelled) return
       // Fetch only this creator's businesses from the safe view, chunked to
@@ -170,6 +170,15 @@ export default function CreatorPage({ handle: handleProp }) {
           </button>
         ))}
         <div className="flex-1" />
+        {(() => {
+          const active = countries.find((c) => c.id === activeCountryId)
+          return active?.published ? (
+            <a href={`/${active.slug}`}
+               className="text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30 text-accent hover:bg-accent/8 transition-colors">
+              Full {active.name} guide →
+            </a>
+          ) : null
+        })()}
         <button onClick={() => setShowMap((v) => !v)}
                 className="md:hidden text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30 text-accent cursor-pointer">
           {showMap ? 'List' : 'Map'}
