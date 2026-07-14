@@ -109,14 +109,15 @@ Deno.serve(async (req) => {
     }
 
     // ── V2: set_license (none|requested|active) ───────────────────
-    // Sets the app.license_admin GUC so the guard trigger permits an 'active'
-    // transition, then updates. GUC is set on the same session/connection.
+    // Single atomic RPC: the GUC bypass and the UPDATE must run in ONE
+    // transaction/session — split PostgREST calls can land on different pooled
+    // backends, so the guard trigger never sees the bypass (Task 8 finding).
     if (action === 'set_license') {
       const { creator_id, newsletter_license } = body
       if (!creator_id || !['none', 'requested', 'active'].includes(newsletter_license)) throw new Error('bad args')
-      const { error: gerr } = await admin.rpc('set_license_admin_guc')
-      if (gerr) throw gerr
-      const { error } = await admin.from('creators').update({ newsletter_license }).eq('id', creator_id)
+      const { error } = await admin.rpc('admin_set_license', {
+        p_creator_id: creator_id, p_status: newsletter_license,
+      })
       if (error) throw error
       return json({ ok: true })
     }
