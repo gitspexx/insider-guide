@@ -230,14 +230,17 @@ export default function CreatorPage({ handle: handleProp }) {
             </a>
           ) : null
         })()}
-        <button onClick={() => setShowMap((v) => !v)}
-                className="md:hidden text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30 text-accent cursor-pointer">
-          {showMap ? 'List' : 'Map'}
-        </button>
+        {mapSpots.length > 0 && (
+          <button onClick={() => setShowMap((v) => !v)}
+                  className="md:hidden text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30 text-accent cursor-pointer">
+            {showMap ? 'List' : 'Map'}
+          </button>
+        )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 pb-20 grid md:grid-cols-[1fr_420px] gap-6">
-        <div className={`grid sm:grid-cols-2 gap-4 auto-rows-min ${showMap ? 'hidden md:grid' : ''}`}>
+      {/* Map renders only when spots carry coordinates (enrichment fills them). */}
+      <div className={`max-w-6xl mx-auto px-4 pb-20 grid gap-6 ${mapSpots.length > 0 ? 'md:grid-cols-[1fr_420px]' : ''}`}>
+        <div className={`grid sm:grid-cols-2 gap-4 auto-rows-min ${mapSpots.length > 0 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} ${showMap && mapSpots.length > 0 ? 'hidden md:grid' : ''}`}>
           {visible.map((s, i) => (
             <div key={s.id} id={`spot-${s.id}`}>
               <BusinessCard business={s.business} index={i}
@@ -246,11 +249,13 @@ export default function CreatorPage({ handle: handleProp }) {
           ))}
           {visible.length === 0 && <p className="text-text-dim text-sm col-span-full">No spots here yet.</p>}
         </div>
-        <div className={`h-[420px] md:h-[calc(100vh-140px)] md:sticky md:top-6 ${showMap ? '' : 'hidden md:block'}`}>
-          <Suspense fallback={<div className="w-full h-full rounded-xl border border-border bg-bg-card animate-pulse" />}>
-            <CreatorMap spots={mapSpots} accent={accent} onPinClick={onPinClick} />
-          </Suspense>
-        </div>
+        {mapSpots.length > 0 && (
+          <div className={`h-[420px] md:h-[calc(100vh-140px)] md:sticky md:top-6 ${showMap ? '' : 'hidden md:block'}`}>
+            <Suspense fallback={<div className="w-full h-full rounded-xl border border-border bg-bg-card animate-pulse" />}>
+              <CreatorMap spots={mapSpots} accent={accent} onPinClick={onPinClick} />
+            </Suspense>
+          </div>
+        )}
       </div>
 
       {/* ─── Country guides catalog (founding creator only) ─── */}
