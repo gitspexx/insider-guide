@@ -32,6 +32,7 @@ const StudioLogin = lazy(() => import('./pages/studio/Login'))
 const StudioLayout = lazy(() => import('./pages/studio/StudioLayout'))
 const MySpots = lazy(() => import('./pages/studio/MySpots'))
 const StudioImport = lazy(() => import('./pages/studio/Import'))
+const StudioEarnings = lazy(() => import('./pages/studio/Earnings'))
 const StudioSettings = lazy(() => import('./pages/studio/Settings'))
 
 function RouteFallback() {
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
             <Route index element={<MySpots />} />
             <Route path="import" element={<StudioImport />} />
+            <Route path="earnings" element={<StudioEarnings />} />
             <Route path="settings" element={<StudioSettings />} />
           </Route>
           <Route path="/:slug" element={<CountryGuide />} />

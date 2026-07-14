@@ -41,6 +41,7 @@ export default function StudioSettings() {
       ig_handle: form.ig_handle,
       theme: form.theme,
       email_capture_enabled: form.email_capture_enabled,
+      dm_automations_enabled: form.dm_automations_enabled,
     }).eq('id', creator.id)
     if (error) setError(error.message)
     else setSaved(true)
@@ -119,6 +120,28 @@ export default function StudioSettings() {
           <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-text transition-all ${
             form.email_capture_enabled ? 'left-6' : 'left-0.5'}`} />
         </button>
+      </section>
+
+      <section className="flex items-center justify-between bg-bg-card border border-border rounded-xl p-5">
+        <div>
+          <h2 className="text-sm text-text mb-1">DM automations</h2>
+          <p className="text-xs text-text-dim">
+            We reply to your IG DMs with your map link + capture emails. We'll contact you to set it up.
+          </p>
+        </div>
+        <button onClick={() => setForm({ ...form, dm_automations_enabled: !form.dm_automations_enabled })}
+                className={`w-12 h-6 rounded-full transition-colors cursor-pointer relative ${
+                  form.dm_automations_enabled ? 'bg-accent' : 'bg-bg-elevated border border-border'}`}>
+          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-text transition-all ${
+            form.dm_automations_enabled ? 'left-6' : 'left-0.5'}`} />
+        </button>
+      </section>
+
+      <section className="bg-bg-card border border-border rounded-xl p-5">
+        <h2 className="text-sm text-text mb-1">Revenue share</h2>
+        <p className="text-xs text-text-dim">
+          You earn 30% of every deal closed on your spots. Track your earnings in the Earnings tab.
+        </p>
       </section>
 
       {error && <p className="text-red-400 text-xs">{error}</p>}

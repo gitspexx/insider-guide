@@ -34,6 +34,9 @@ export default function Checkout() {
   const tierKey = params.get('tier')
   const tier = TIERS[tierKey]
 
+  const refParam = params.get('ref') || ''
+  const creatorRef = /^creator_[a-z0-9_]{3,30}$/.test(refParam) ? refParam : null
+
   const [email, setEmail] = useState('')
   const [emailConfirmed, setEmailConfirmed] = useState(false)
   const [emailError, setEmailError] = useState(null)
@@ -122,7 +125,7 @@ export default function Checkout() {
         published: false,
         outreach_status: 'to_contact',
         paid_pending_tier: tier.key, // 'featured' | 'partner'
-        notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}. Awaiting Stripe confirmation.`,
+        notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}. Awaiting Stripe confirmation.${creatorRef ? ` [ref ${creatorRef}]` : ''}`,
       }
 
       const { data: inserted, error: insertError } = await supabase
