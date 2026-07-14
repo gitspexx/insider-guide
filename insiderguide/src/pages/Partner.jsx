@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Seo from '../components/Seo'
 
@@ -117,6 +117,8 @@ const FAQS = [
 
 export default function Partner() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const ref = searchParams.get('ref') || ''
   const [countries, setCountries] = useState([])
   const [featuredByCountry, setFeaturedByCountry] = useState({})
   const [form, setForm] = useState({
@@ -471,7 +473,7 @@ export default function Partner() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate(`/checkout?tier=${tier.key}`)}
+                  onClick={() => navigate(`/checkout?tier=${tier.key}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`)}
                   className={`mt-auto text-center text-[11px] tracking-[0.1em] uppercase font-medium px-5 py-3 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
                     tier.highlight
                       ? 'bg-accent text-bg hover:bg-accent/85'
