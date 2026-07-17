@@ -125,6 +125,9 @@ export default function AdminDashboard() {
             <Link to="/admin/outreach" className="text-[10px] text-gold uppercase tracking-widest hover:text-gold/80">
               Outreach
             </Link>
+            <Link to="/admin/creators" className="text-[10px] text-gold uppercase tracking-widest hover:text-gold/80">
+              Creators
+            </Link>
             <Link to="/" className="text-[10px] text-text-dim uppercase tracking-widest hover:text-text-secondary">
               View Site
             </Link>
