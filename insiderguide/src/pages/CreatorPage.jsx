@@ -43,8 +43,9 @@ export default function CreatorPage({ handle: handleProp }) {
       // No FK embedding through the safe view — parallel fetch + client merge.
       const [savesRes, countriesRes] = await Promise.all([
         supabase.from('creator_saves')
-          .select('id, business_id, note, sort, created_at')
+          .select('id, business_id, note, sort, pinned, created_at')
           .eq('creator_id', c.id).eq('hidden', false)
+          .order('pinned', { ascending: false })
           .order('sort').order('created_at', { ascending: false }),
         supabase.from('countries').select('id, name, slug, flag_emoji, published'),
       ])
@@ -243,7 +244,7 @@ export default function CreatorPage({ handle: handleProp }) {
         <div className={`grid sm:grid-cols-2 gap-4 auto-rows-min ${mapSpots.length > 0 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} ${showMap && mapSpots.length > 0 ? 'hidden md:grid' : ''}`}>
           {visible.map((s, i) => (
             <div key={s.id} id={`spot-${s.id}`}>
-              <BusinessCard business={s.business} index={i}
+              <BusinessCard business={s.business} index={i} pinned={s.pinned}
                             creatorNote={s.note} creatorName={creator.display_name} />
             </div>
           ))}

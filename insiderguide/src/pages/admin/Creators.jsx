@@ -12,9 +12,34 @@ const CREATOR_OUTREACH_TEMPLATE =
 
 async function fetchCreators() {
   const { data } = await supabase.from('creators')
-    .select('id, handle, display_name, status, newsletter_license')
+    .select('id, handle, display_name, status, newsletter_license, dm_automations_enabled')
     .order('created_at', { ascending: false })
   return data || []
+}
+
+// Per-creator overview numbers for the list rows. Few creators — cheap
+// head-count queries per creator beat fetching whole tables (PostgREST caps
+// un-limited selects at 1000 rows).
+async function fetchCreatorStats(creators) {
+  const { data: deals } = await supabase.from('creator_deals')
+    .select('creator_id, creator_share_cents, status')
+  const stats = {}
+  await Promise.all(creators.map(async (c) => {
+    const [saves, leads] = await Promise.all([
+      supabase.from('creator_saves')
+        .select('id', { count: 'exact', head: true }).eq('creator_id', c.id),
+      supabase.from('newsletter_subscribers')
+        .select('id', { count: 'exact', head: true }).eq('source', `creator_${c.handle}`),
+    ])
+    const mine = (deals || []).filter((d) => d.creator_id === c.id)
+    stats[c.id] = {
+      spots: saves.count || 0,
+      leads: leads.count || 0,
+      earnedCents: mine.filter((d) => d.status !== 'pending_attribution')
+        .reduce((sum, d) => sum + (d.creator_share_cents || 0), 0),
+    }
+  }))
+  return stats
 }
 
 // Businesses this creator imported that still need contacting.
@@ -41,19 +66,25 @@ async function fetchCreatorPanel(creatorId, handle) {
       .select('id, business_id, tier, amount_cents, creator_share_cents, status, closed_at')
       .eq('creator_id', creatorId).order('closed_at', { ascending: false }),
     supabase.from('creator_saves')
-      .select('business_id, businesses(id, name)')
+      .select('business_id, businesses(id, name, city, tier_paid, outreach_status, enrich_status)')
       .eq('creator_id', creatorId),
     supabase.from('creator_requests').select('id, business_id, status, notes').eq('creator_id', creatorId),
   ])
   const imports = await fetchCreatorImports(handle)
-  // Flatten to [{ id, name }] for the picker; drop any rows whose business row
-  // didn't resolve (should not happen for admin, defensive).
+  // Flatten; drop any rows whose business row didn't resolve (should not
+  // happen for admin, defensive). Used by the spots table AND the pickers.
   const saved = (savedRes.data || [])
     .map((s) => s.businesses)
     .filter(Boolean)
+  const funnel = {
+    toContact: saved.filter((b) => b.outreach_status === 'to_contact' && !b.tier_paid).length,
+    contacted: saved.filter((b) => b.outreach_status && !['new', 'to_contact'].includes(b.outreach_status) && !b.tier_paid).length,
+    converted: saved.filter((b) => b.tier_paid).length,
+  }
   return {
     deals: dealsRes.data || [],
     saved,
+    funnel,
     requests: reqRes.data || [],
     imports,
   }
@@ -63,11 +94,12 @@ function usd(c) { return `$${(Number(c || 0) / 100).toFixed(0)}` }
 
 export default function AdminCreators() {
   const [creators, setCreators] = useState([])
+  const [stats, setStats] = useState({})            // creator_id → { spots, leads, earnedCents }
   const [form, setForm] = useState({ email: '', handle: '', display_name: '' })
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [openId, setOpenId] = useState(null)
-  const [panel, setPanel] = useState(null)          // { deals, saved, requests, imports }
+  const [panel, setPanel] = useState(null)          // { deals, saved, funnel, requests, imports }
   const [dealForm, setDealForm] = useState({ business_id: '', tier: 'featured', amount_cents: 20000 })
   const [reqForm, setReqForm] = useState({ business_id: '', notes: '' })
 
@@ -75,13 +107,20 @@ export default function AdminCreators() {
     let cancelled = false
     async function load() {
       const rows = await fetchCreators()
-      if (!cancelled) setCreators(rows)
+      if (cancelled) return
+      setCreators(rows)
+      const st = await fetchCreatorStats(rows)
+      if (!cancelled) setStats(st)
     }
     load()
     return () => { cancelled = true }
   }, [])
 
-  async function reload() { setCreators(await fetchCreators()) }
+  async function reload() {
+    const rows = await fetchCreators()
+    setCreators(rows)
+    setStats(await fetchCreatorStats(rows))
+  }
 
   async function call(body) {
     setBusy(true); setMsg(null)
@@ -129,6 +168,10 @@ export default function AdminCreators() {
     if (await call({ action: 'set_license', creator_id: c.id, newsletter_license })) reload()
   }
 
+  async function setDm(c) {
+    if (await call({ action: 'set_dm', creator_id: c.id, enabled: !c.dm_automations_enabled })) reload()
+  }
+
   async function addRequest(c) {
     if (!reqForm.business_id) { setMsg('Pick a business'); return }
     if (await call({ action: 'add_request', creator_id: c.id, ...reqForm })) {
@@ -165,6 +208,11 @@ export default function AdminCreators() {
                 <a href={`/@${c.handle}`} target="_blank" rel="noreferrer" className="text-sm text-white hover:text-gold">@{c.handle}</a>
                 <span className="text-xs text-text-dim">{c.display_name}</span>
                 <span className={`text-[10px] uppercase tracking-wider ${c.status === 'active' ? 'text-gold' : 'text-red-400/70'}`}>{c.status}</span>
+                {stats[c.id] && (
+                  <span className="text-[11px] text-text-dim">
+                    {stats[c.id].spots} spots · {stats[c.id].leads} leads · earned <span className="text-gold">{usd(stats[c.id].earnedCents)}</span>
+                  </span>
+                )}
                 <select value={c.newsletter_license}
                         onChange={(e) => setLicense(c, e.target.value)}
                         className="bg-bg border border-border rounded-sm px-2 py-1 text-[11px] text-white">
@@ -172,6 +220,13 @@ export default function AdminCreators() {
                   <option value="requested">license: requested</option>
                   <option value="active">license: active</option>
                 </select>
+                <button onClick={() => setDm(c)} disabled={busy}
+                        className={`text-[11px] px-2 py-1 rounded-sm border cursor-pointer ${
+                          c.dm_automations_enabled
+                            ? 'border-gold/40 text-gold'
+                            : 'border-border text-text-dim hover:text-white'}`}>
+                  DM auto: {c.dm_automations_enabled ? 'on' : 'off'}
+                </button>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => call({ action: 'set_status', creator_id: c.id, status: c.status === 'active' ? 'paused' : 'active' }).then((ok) => ok && reload())}
@@ -191,6 +246,36 @@ export default function AdminCreators() {
                   <p className="text-text-dim text-sm">Loading…</p>
                 ) : (
                   <>
+                    {/* Spots + outreach funnel */}
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-text-dim block mb-2">
+                        Spots ({panel.saved.length})
+                      </span>
+                      <div className="flex gap-4 text-[11px] mb-2">
+                        <span className="text-text-dim">to contact <span className="text-white">{panel.funnel.toContact}</span></span>
+                        <span className="text-text-dim">contacted <span className="text-white">{panel.funnel.contacted}</span></span>
+                        <span className="text-text-dim">converted <span className="text-gold">{panel.funnel.converted}</span></span>
+                      </div>
+                      {panel.saved.length === 0 ? (
+                        <p className="text-text-dim text-xs">No spots imported yet.</p>
+                      ) : (
+                        <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+                          {panel.saved.map((b) => (
+                            <div key={b.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center text-xs">
+                              <span className="text-white truncate">{b.name}</span>
+                              <span className="text-text-dim">{b.city || '—'}</span>
+                              <span className={b.enrich_status === 'enriched' ? 'text-green-400/70' : 'text-text-dim'}>
+                                {(b.enrich_status || '').replace('_', ' ') || '—'}
+                              </span>
+                              <span className={b.tier_paid ? 'text-gold' : 'text-text-dim'}>
+                                {b.tier_paid ? 'PAID' : (b.outreach_status || '').replace('_', ' ') || '—'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Deals */}
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-text-dim block mb-2">Deals</span>

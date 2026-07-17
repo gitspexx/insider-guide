@@ -10,8 +10,9 @@ async function fetchSaves() {
   // my_saved_businesses view; countries mapped client-side.
   const [savesRes, bizRes, countriesRes] = await Promise.all([
     supabase.from('creator_saves')
-      .select('id, business_id, note, hidden, created_at')
+      .select('id, business_id, note, hidden, pinned, created_at')
       .eq('creator_id', session.user.id)
+      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false }),
     supabase.from('my_saved_businesses')
       .select('id, name, category, city, location, enrich_status, photo_url, country_id'),
@@ -82,10 +83,14 @@ export default function MySpots() {
       <div className="flex flex-col gap-3">
         {saves.map((s) => (
           <div key={s.id}
-               className={`bg-bg-card border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3 ${s.hidden ? 'opacity-50' : ''}`}>
+               className={`bg-bg-card border rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-3 ${
+                 s.pinned ? 'border-accent/40' : 'border-border'} ${s.hidden ? 'opacity-50' : ''}`}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-display text-lg text-text truncate">{s.business?.name || 'Unknown place'}</span>
+                {s.pinned && (
+                  <span className="text-[10px] uppercase tracking-wider text-accent border border-accent/30 px-2 py-0.5 rounded-full">pinned</span>
+                )}
                 <span className="text-xs text-text-dim">
                   {s.business?.country?.flag_emoji} {s.business?.city || s.business?.location || ''}
                 </span>
@@ -101,6 +106,12 @@ export default function MySpots() {
               />
             </div>
             <div className="flex gap-2 shrink-0">
+              <button onClick={() => updateSave(s.id, { pinned: !s.pinned })}
+                      disabled={savingId === s.id}
+                      className={`text-xs uppercase tracking-wider border px-3 py-2 rounded-lg cursor-pointer ${
+                        s.pinned ? 'text-accent border-accent/40' : 'text-text-dim border-border hover:text-text-secondary'}`}>
+                {s.pinned ? 'Unpin' : 'Pin'}
+              </button>
               <button onClick={() => updateSave(s.id, { hidden: !s.hidden })}
                       disabled={savingId === s.id}
                       className="text-xs uppercase tracking-wider text-text-dim border border-border px-3 py-2 rounded-lg hover:text-text-secondary cursor-pointer">

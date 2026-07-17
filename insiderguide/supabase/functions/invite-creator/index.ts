@@ -122,6 +122,16 @@ Deno.serve(async (req) => {
       return json({ ok: true })
     }
 
+    // ── set_dm (admin flips a creator's DM-automation flag) ───────
+    if (action === 'set_dm') {
+      const { creator_id, enabled } = body
+      if (!creator_id || typeof enabled !== 'boolean') throw new Error('bad args')
+      const { error } = await admin.from('creators')
+        .update({ dm_automations_enabled: enabled }).eq('id', creator_id)
+      if (error) throw error
+      return json({ ok: true })
+    }
+
     // ── V2: add_request (admin creates a reel request for a creator) ──
     if (action === 'add_request') {
       const { creator_id, business_id, notes } = body

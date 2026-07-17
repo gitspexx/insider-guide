@@ -13,7 +13,7 @@ const CATEGORY_STYLES = {
 
 const DEFAULT_STYLE = { color: 'text-text-dim', dot: 'bg-text-dim', glow: '' }
 
-export default function BusinessCard({ business, index = 0, isTopPick = false, creatorNote, creatorName = 'Alex' }) {
+export default function BusinessCard({ business, index = 0, isTopPick = false, creatorNote, creatorName = 'Alex', pinned = false }) {
   const isPartner = business.tier === 'partner'
   const isFeatured = business.tier === 'featured'
   const cat = CATEGORY_STYLES[business.category] || DEFAULT_STYLE
@@ -24,7 +24,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.035, ease: 'easeOut' }}
       className={`group relative bg-bg-card border rounded-xl overflow-hidden transition-all duration-400 ${
-        isTopPick
+        isTopPick || pinned
           ? 'border-border-accent/40 hover:shadow-[0_8px_40px_rgba(200,165,90,0.08)] hover:border-border-accent'
           : isPartner
           ? 'border-border-accent col-span-full md:col-span-2 hover:shadow-[0_8px_40px_rgba(200,165,90,0.08)]'
@@ -42,6 +42,11 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
               {business.category}
             </span>
           </div>
+          {pinned && !isPartner && !isFeatured && (
+            <span className="text-[10px] tracking-[0.12em] uppercase bg-accent/10 text-accent border border-accent/20 px-2.5 py-0.5 rounded-full font-medium">
+              {creatorName}&rsquo;s pick
+            </span>
+          )}
           {isPartner && (
             <span className="text-[10px] tracking-[0.12em] uppercase bg-accent/10 text-accent border border-accent/20 px-2.5 py-0.5 rounded-full font-medium">
               Partner
