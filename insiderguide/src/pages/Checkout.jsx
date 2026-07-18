@@ -23,7 +23,7 @@ const TIERS = {
     name: 'Partner',
     amount_cents: 50000,
     label: 'InsiderGuide Partner – $500',
-    description: 'Hero placement, dedicated creator reel, newsletter logo, priority creator access.',
+    description: 'Hero placement, newsletter logo, priority creator access.',
   },
 }
 

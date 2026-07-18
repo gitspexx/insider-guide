@@ -26,6 +26,7 @@ const AdminMapsImport = lazy(() => import('./pages/admin/MapsImport'))
 const AdminMapsLinks = lazy(() => import('./pages/admin/MapsLinks'))
 const AdminOpportunities = lazy(() => import('./pages/admin/Opportunities'))
 const AdminCreators = lazy(() => import('./pages/admin/Creators'))
+const AdminApplications = lazy(() => import('./pages/admin/Applications'))
 
 // Lazy: creator studio suite (auth-gated, never loaded by public visitors).
 const StudioLogin = lazy(() => import('./pages/studio/Login'))
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/admin/businesses/new" element={<AdminRoute><AdminBusinessForm /></AdminRoute>} />
           <Route path="/admin/businesses/:id/edit" element={<AdminRoute><AdminBusinessForm /></AdminRoute>} />
           <Route path="/admin/creators" element={<AdminRoute><AdminCreators /></AdminRoute>} />
+          <Route path="/admin/applications" element={<AdminRoute><AdminApplications /></AdminRoute>} />
           <Route path="/admin/:slug" element={<AdminRoute><AdminCountry /></AdminRoute>} />
         </Routes>
       </Suspense>
