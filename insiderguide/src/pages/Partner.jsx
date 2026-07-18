@@ -54,11 +54,10 @@ const TIERS = [
     name: 'Partner',
     price: '$500',
     period: 'country + content',
-    description: 'Hero placement plus original content from a creator.',
+    description: 'Hero placement across your country guide.',
     features: [
       'Everything in Featured',
       'Hero placement at the top of your country guide',
-      'One dedicated Instagram reel from a network creator',
       'Logo in the next newsletter header',
       'Priority access when creators look for sponsors in your country',
     ],
@@ -107,7 +106,7 @@ const FAQS = [
   },
   {
     q: 'What\u2019s the difference between Featured and Partner?',
-    a: 'Featured = pinned in your category, creator endorsement, IG story. Partner = hero spot in the country guide plus a dedicated reel. Featured is for proven local businesses. Partner is for hotels and flagship experiences.',
+    a: 'Featured = pinned in your category, creator endorsement, IG story. Partner = hero spot in the country guide plus newsletter logo and priority creator access. Featured is for proven local businesses. Partner is for hotels and flagship experiences.',
   },
   {
     q: 'Is this a review site?',
