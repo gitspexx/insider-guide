@@ -57,7 +57,6 @@ function invoiceHtml(p: {
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f2ec;">
 <div style="max-width:600px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="background:#0B0A08;border-radius:14px 14px 0 0;padding:28px 32px;">
-    <img src="${SITE}/hero-reel.jpg" alt="Insider Guide" width="536" style="width:100%;border-radius:8px;display:block;margin-bottom:20px;" />
     <div style="color:#C8A55A;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;">Insider Guide</div>
     <div style="color:#ffffff;font-size:22px;font-family:Georgia,serif;margin-top:6px;">Invoice ${p.invoiceNo}</div>
   </div>
