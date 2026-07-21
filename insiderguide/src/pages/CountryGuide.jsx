@@ -54,7 +54,7 @@ export default function CountryGuide() {
           .select('*')
           .eq('slug', slug)
           .eq('published', true)
-          .single()
+          .maybeSingle()
 
         if (countryErr || !countryData) {
           // Not a country slug — it may be a creator handle (/alex or the
@@ -86,7 +86,10 @@ export default function CountryGuide() {
             .from('public_businesses')
             .select(cols)
             .eq('country_id', countryData.id)
+            // id tiebreak: name is non-unique, so page boundaries would
+            // otherwise duplicate/skip rows across requests.
             .order('name')
+            .order('id')
             .range(off, off + 999)
           if (pageErr || !page || page.length === 0) break
           allBiz = allBiz.concat(page)

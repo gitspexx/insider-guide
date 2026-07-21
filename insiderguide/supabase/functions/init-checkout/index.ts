@@ -16,6 +16,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      "Content-Type": "application/json",
+    },
+  });
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -90,6 +100,28 @@ Deno.serve(async (req: Request) => {
   const externalId = isUuid(body.customer_external_id)
     ? (body.customer_external_id as string)
     : user.id;
+
+  // A uuid external id must point at a real businesses row — otherwise the
+  // customer pays and bcax-callback has nothing to promote (charge lands,
+  // nothing happens, manual refund). Fail BEFORE creating the PaymentIntent.
+  if (isUuid(body.customer_external_id)) {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    const { data: bizRow } = await admin
+      .from("businesses")
+      .select("id, tier_paid")
+      .eq("id", externalId)
+      .maybeSingle();
+    if (!bizRow) {
+      return json({ error: "Unknown business reference — reload the page or contact us." }, 400);
+    }
+    if (bizRow.tier_paid === true) {
+      return json({ error: "This listing is already paid — contact us if you want to upgrade." }, 400);
+    }
+  }
 
   const forwardBody = {
     ...body,

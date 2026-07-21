@@ -136,19 +136,64 @@ Deno.serve(async (req: Request) => {
   // Idempotency check — if the row is already promoted, no-op.
   const { data: existing, error: readErr } = await supabase
     .from("businesses")
-    .select("id, name, email, tier, tier_paid, published, paid_at, notes")
+    .select("id, name, email, tier, tier_paid, published, paid_at, notes, paid_pending_tier")
     .eq("id", businessId)
     .maybeSingle();
   if (readErr) {
     console.error("bcax-callback: read failed", readErr);
     return json({ error: "Read failed", detail: readErr.message }, 500);
   }
+  const slackPing = async (text: string) => {
+    try {
+      const botToken = Deno.env.get("SLACK_BOT_TOKEN") || "";
+      const channel = Deno.env.get("INSIDER_GUIDE_APPLICATIONS_CHANNEL") || "";
+      if (!botToken || !channel) return;
+      await fetch("https://slack.com/api/chat.postMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${botToken}` },
+        body: JSON.stringify({ channel, text }),
+      });
+    } catch (e) {
+      console.error("bcax-callback: slack notify failed", e);
+    }
+  };
+
   if (!existing) {
-    console.warn("bcax-callback: no businesses row matches", businessId);
+    // A charge landed with no row to promote (deleted pending row, mistyped
+    // invoice link). Money moved — this MUST reach a human, not just logs.
+    console.error("bcax-callback: PAYMENT WITH NO MATCHING ROW", businessId, body.customer_email);
+    await slackPing(
+      `:rotating_light: PAYMENT RECEIVED but no businesses row matches id ${businessId} ` +
+      `(${body.customer_email || "no email"}, ${lookupKey}). Reconcile manually in Stripe/BCAX.`,
+    );
     return json({ ok: true, action: "ignored_no_matching_row" });
   }
   if (existing.tier === targetTier && existing.tier_paid === true) {
     return json({ ok: true, action: "already_promoted" });
+  }
+  // Never let a new payment DEMOTE an already-paid listing (e.g. someone pays
+  // $200 featured against a live $500 partner row — hostile or mistaken).
+  if (existing.tier_paid === true) {
+    await slackPing(
+      `:warning: Payment for *${targetTier}* against ALREADY-PAID listing “${existing.name}” ` +
+      `(current tier ${existing.tier}) — no change applied. Review in Stripe.`,
+    );
+    return json({ ok: true, action: "ignored_already_paid" });
+  }
+  // Only rows that are actually awaiting payment are promotable: a checkout
+  // pending row (paid_pending_tier set) or an invoiced application ([invoice
+  // marker). Blocks drive-by payments against arbitrary public listing ids.
+  const isPayable =
+    body.customer_external_id === existing.id &&
+    ((existing as { paid_pending_tier?: string | null }).paid_pending_tier != null ||
+      /\[invoice IG-/.test(existing.notes || "") ||
+      / \(pending /i.test(existing.name || ""));
+  if (!isPayable) {
+    await slackPing(
+      `:warning: Payment for *${targetTier}* against non-payable row “${existing.name}” ` +
+      `(${businessId}) — no change applied. Reconcile manually.`,
+    );
+    return json({ ok: true, action: "ignored_not_payable" });
   }
 
   // Placeholder rows (created at checkout with only an email — name like
@@ -176,23 +221,10 @@ Deno.serve(async (req: Request) => {
   }
 
   // Payment Slack ping (best effort — never fail the webhook over it).
-  try {
-    const botToken = Deno.env.get("SLACK_BOT_TOKEN") || "";
-    const channel = Deno.env.get("INSIDER_GUIDE_APPLICATIONS_CHANNEL") || "";
-    if (botToken && channel) {
-      const amount = targetTier === "partner" ? "$500" : "$200";
-      const text = isPlaceholder
-        ? `:moneybag: PAID — *${existing.name}* (${existing.email || "no email"}) paid ${amount} for *${targetTier}*. Placeholder row: complete the listing details in /admin and publish.`
-        : `:moneybag: PAID — *${existing.name}* paid ${amount} for *${targetTier}* — now live.`;
-      await fetch("https://slack.com/api/chat.postMessage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${botToken}` },
-        body: JSON.stringify({ channel, text }),
-      });
-    }
-  } catch (e) {
-    console.error("bcax-callback: slack notify failed", e);
-  }
+  const amount = targetTier === "partner" ? "$500" : "$200";
+  await slackPing(isPlaceholder
+    ? `:moneybag: PAID — *${existing.name}* (${existing.email || "no email"}) paid ${amount} for *${targetTier}*. Placeholder row: complete the listing details in /admin and publish.`
+    : `:moneybag: PAID — *${existing.name}* paid ${amount} for *${targetTier}* — now live.`);
 
   return json({
     ok: true,

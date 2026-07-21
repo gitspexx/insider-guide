@@ -128,3 +128,13 @@ $$;
 revoke all on function public.next_ig_invoice_no() from public, anon, authenticated;
 grant execute on function public.next_ig_invoice_no() to service_role;
 grant usage on sequence public.ig_invoice_seq to service_role;
+
+-- ── Round 2 (post-deploy verification, applied as hardening_round2 +
+--    country_counts_matview) ──────────────────────────────────────────
+-- counts RPC seq-scanned 63k rows (~4s) and blew the anon 3s statement
+-- timeout → 500s on cold cache. Counts are now precomputed:
+--   private.country_counts_mv (unique-indexed) + pg_cron refresh */15min
+--   ('ig-refresh-country-counts'); country_business_counts() reads the MV.
+-- Grant hygiene: anon stripped to INSERT-only on businesses; INSERT-only on
+-- newsletter_subscribers. next_ig_invoice_no width grows past 999 (lpad
+-- truncation collision). Ecuador flag emoji backfilled.

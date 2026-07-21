@@ -176,10 +176,22 @@ Deno.serve(async (req) => {
       html = welcomeHtml({ businessName: biz.name, countrySlug: (biz as any).countries?.slug || null })
     } else {
       const offer = TIER_OFFER[effectiveTier]
-      // Sequence-backed invoice number (race-safe, survives note edits).
-      const { data: nextNo, error: seqErr } = await admin.rpc('next_ig_invoice_no')
-      if (seqErr || !nextNo) throw new Error(`invoice numbering failed: ${seqErr?.message}`)
-      invoiceNo = nextNo as string
+      // Idempotent numbering: an earlier attempt may have reserved a number
+      // (marker written) but failed later — reuse it so the applicant never
+      // sees two invoice numbers for one placement. Otherwise draw from the
+      // sequence and RESERVE it on the row BEFORE emailing.
+      const existingNo = (biz.notes || '').match(/\[invoice (IG-[\d-]+)\]/)?.[1]
+      if (existingNo) {
+        invoiceNo = existingNo
+      } else {
+        const { data: nextNo, error: seqErr } = await admin.rpc('next_ig_invoice_no')
+        if (seqErr || !nextNo) throw new Error(`invoice numbering failed: ${seqErr?.message}`)
+        invoiceNo = nextNo as string
+        const { error: markErr } = await admin.from('businesses')
+          .update({ notes: `${biz.notes || ''} [invoice ${invoiceNo}]`.trim() })
+          .eq('id', business_id)
+        if (markErr) throw new Error(`could not reserve invoice number: ${markErr.message}`)
+      }
       const checkoutUrl = `${SITE}/checkout?tier=${effectiveTier}&biz=${business_id}`
       subject = `Invoice ${invoiceNo} — ${offer.label} placement for ${biz.name}`
       html = invoiceHtml({
@@ -208,10 +220,17 @@ Deno.serve(async (req) => {
         .update({ published: true, notes: `${biz.notes || ''} [application-approved listed]`.trim() })
         .eq('id', business_id)
     } else {
+      // Invoice marker was already reserved above — re-read notes so we don't
+      // clobber it, then finalize with the approved marker.
+      const { data: fresh } = await admin.from('businesses')
+        .select('notes').eq('id', business_id).single()
+      const notesNow = fresh?.notes || biz.notes || ''
       await admin.from('businesses')
         .update({
           outreach_status: 'invoiced',
-          notes: `${biz.notes || ''} [application-approved ${effectiveTier}] [invoice ${invoiceNo}]`.trim(),
+          notes: /\[application-approved /.test(notesNow)
+            ? notesNow
+            : `${notesNow} [application-approved ${effectiveTier}]`.trim(),
         })
         .eq('id', business_id)
     }

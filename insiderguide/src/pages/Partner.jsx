@@ -728,13 +728,13 @@ export default function Partner() {
               Instagram
             </a>
             <span className="w-[1px] h-3 bg-border" />
-            <Link to="/privacy" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
+            <a href="/legal/privacy.html" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light no-underline">
               Privacy
-            </Link>
+            </a>
             <span className="w-[1px] h-3 bg-border" />
-            <Link to="/terms" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
+            <a href="/legal/terms.html" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light no-underline">
               Terms
-            </Link>
+            </a>
             <span className="w-[1px] h-3 bg-border" />
             <a href="mailto:lead@insiderguide.co" className="text-[11px] text-text-dim tracking-[0.1em] uppercase hover:text-accent transition-colors font-light">
               Contact
