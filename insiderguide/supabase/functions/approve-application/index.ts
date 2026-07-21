@@ -24,7 +24,9 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 const SITE = 'https://insiderguide.co'
-const SENDER_EMAIL = 'lead@insiderguide.co'
+// Sends as the onboarding@ alias (BCA pattern) — the email_accounts row auths
+// as the hello@ mailbox, so replies land in hello@ where the team works.
+const SENDER_EMAIL = 'onboarding@insiderguide.co'
 
 const TIER_OFFER: Record<string, { label: string; amountUsd: number; desc: string }> = {
   featured: {
