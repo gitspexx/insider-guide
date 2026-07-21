@@ -51,6 +51,10 @@ export default function CountryGuide() {
   const [redirectTo, setRedirectTo] = useState(null)
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
+  // Per-section render cap — big countries hold thousands of rows and
+  // mounting them all at once costs ~10s of main-thread time. Render the
+  // first chunk, grow on demand.
+  const [sectionLimits, setSectionLimits] = useState({})
 
   useEffect(() => {
     async function load() {
@@ -176,6 +180,37 @@ export default function CountryGuide() {
   // Anything that doesn't fit a group (misc category)
   const groupedCategories = new Set(CATEGORY_GROUPS.flatMap((g) => g.categories))
   const uncategorized = remaining.filter((b) => !groupedCategories.has(b.category))
+
+  const INITIAL_VISIBLE = 12
+  const visibleFor = (key, total) => Math.min(total, sectionLimits[key] ?? INITIAL_VISIBLE)
+  const showMore = (key, total) =>
+    setSectionLimits((l) => ({ ...l, [key]: Math.min(total, (l[key] ?? INITIAL_VISIBLE) + 60) }))
+  const showAll = (key, total) => setSectionLimits((l) => ({ ...l, [key]: total }))
+
+  function SectionExpand({ sectionKey, total }) {
+    const shown = visibleFor(sectionKey, total)
+    if (shown >= total) return null
+    return (
+      <div className="flex items-center justify-center gap-3 mt-6">
+        <button
+          onClick={() => showMore(sectionKey, total)}
+          className="text-[11px] tracking-[0.1em] uppercase font-light text-accent border border-accent/25 px-5 py-2.5 rounded-lg hover:bg-accent/8 hover:border-accent/40 transition-all cursor-pointer"
+        >
+          Show more
+        </button>
+        <button
+          onClick={() => showAll(sectionKey, total)}
+          className="text-[11px] tracking-[0.1em] uppercase font-light text-text-dim border border-border px-5 py-2.5 rounded-lg hover:text-text-secondary hover:border-border-hover transition-all cursor-pointer"
+        >
+          Show all {total.toLocaleString()}
+        </button>
+      </div>
+    )
+  }
+
+  // The country slug for CTAs/captures — on /<creator>/<country> `slug` is
+  // the creator handle, NOT the country.
+  const countrySlug = countryParam || slug
 
   // Cities for stats
   const cityMap = {}
@@ -397,7 +432,7 @@ export default function CountryGuide() {
             <SectionHeader
               number="00"
               title="Top Picks"
-              subtitle={`Alex's favorites in ${country.name}`}
+              subtitle={`Hand-picked by ${guideCreator?.display_name || 'the creator'} in ${country.name}`}
               count={topPicks.length}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -426,10 +461,11 @@ export default function CountryGuide() {
               count={group.items.length}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {group.items.map((biz, index) => (
+              {group.items.slice(0, visibleFor(group.key, group.items.length)).map((biz, index) => (
                 <BusinessCard key={biz.id} business={biz} index={index} />
               ))}
             </div>
+            <SectionExpand sectionKey={group.key} total={group.items.length} />
           </motion.div>
           {gi < categoryGroupData.length - 1 && <div className="gradient-divider mt-10" />}
         </section>
@@ -452,10 +488,11 @@ export default function CountryGuide() {
               count={uncategorized.length}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {uncategorized.map((biz, index) => (
+              {uncategorized.slice(0, visibleFor('other', uncategorized.length)).map((biz, index) => (
                 <BusinessCard key={biz.id} business={biz} index={index} />
               ))}
             </div>
+            <SectionExpand sectionKey="other" total={uncategorized.length} />
           </motion.div>
         </section>
       )}
@@ -477,11 +514,11 @@ export default function CountryGuide() {
               </h3>
               <p className="text-[13px] text-text-dim font-light leading-relaxed max-w-lg">
                 All {businesses.length} places saved to a Google Maps list you can use offline.
-                DM <span className="text-accent">@alexspexx</span> on Instagram with <span className="text-accent font-medium">&ldquo;{slug?.toUpperCase()}&rdquo;</span> and you'll get the link instantly.
+                DM <span className="text-accent">@{guideCreator?.handle || 'alexspexx'}</span> on Instagram with <span className="text-accent font-medium">&ldquo;{countrySlug?.toUpperCase()}&rdquo;</span> and you'll get the link instantly.
               </p>
             </div>
             <a
-              href="https://instagram.com/alexspexx"
+              href={`https://instagram.com/${guideCreator?.handle || 'alexspexx'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-accent text-bg text-[12px] tracking-[0.08em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all whitespace-nowrap"
@@ -499,11 +536,11 @@ export default function CountryGuide() {
 
       {/* ─── Email capture ─── */}
       <section className="max-w-[1120px] mx-auto px-6 pb-16">
-        <EmailCapture countrySlug={slug} />
+        <EmailCapture countrySlug={countrySlug} />
       </section>
 
       {/* Soft email-capture popup (delay / exit-intent, once per session) */}
-      <EmailCapturePopup countrySlug={slug} />
+      <EmailCapturePopup countrySlug={countrySlug} />
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-border">

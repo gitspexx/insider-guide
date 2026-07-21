@@ -22,7 +22,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.035, ease: 'easeOut' }}
+      transition={{ duration: 0.4, delay: Math.min(index, 12) * 0.035, ease: 'easeOut' }}
       className={`group relative bg-bg-card border rounded-xl overflow-hidden transition-all duration-400 ${
         isTopPick || pinned
           ? 'border-border-accent/40 hover:shadow-[0_8px_40px_rgba(200,165,90,0.08)] hover:border-border-accent'

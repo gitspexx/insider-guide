@@ -41,7 +41,7 @@ export default function StudioApprovals() {
     setMsg(action === 'reject'
       ? `Rejected ${item.business_name}.`
       : item.kind === 'claim'
-        ? `Claim approved — Complete ($50) upsell sent to ${item.email}.`
+        ? `Claim verified — verification email + tier upsell sent to ${item.email}.`
         : data.invoice
           ? `Approved — invoice ${data.invoice} sent to ${item.email}.`
           : `Approved — ${item.business_name} is live, welcome email sent.`)
@@ -55,7 +55,7 @@ export default function StudioApprovals() {
       <h1 className="font-display text-2xl mb-1">Approvals</h1>
       <p className="text-text-dim text-xs mb-6">
         Businesses applying or claiming their listing in the countries you cover.
-        Paid tiers get an invoice; claims get the $50 Complete offer. You earn 30% of every deal.
+        Paid tiers get an invoice; verified claims get an upsell with all tier offers. You earn 30% of every deal.
       </p>
       {msg && <p className="text-xs text-accent mb-4">{msg}</p>}
 

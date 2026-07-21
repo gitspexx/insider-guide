@@ -24,9 +24,12 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 const SITE = 'https://insiderguide.co'
-// Sends as the onboarding@ alias (BCA pattern) — the email_accounts row auths
-// as the hello@ mailbox, so replies land in hello@ where the team works.
-const SENDER_EMAIL = 'onboarding@insiderguide.co'
+// Email roles (BCA pattern): lead@ sells, onboarding@ confirms applications and
+// sends invoices, hello@ handles ongoing communication — claim verifications go
+// out from hello@ so the reply thread stays where the team works. All aliases
+// auth as the hello@ mailbox.
+const ONBOARDING_SENDER = 'onboarding@insiderguide.co'
+const HELLO_SENDER = 'hello@insiderguide.co'
 
 const TIER_OFFER: Record<string, { label: string; amountUsd: number; desc: string }> = {
   complete: {
@@ -57,7 +60,7 @@ const BANK = {
 
 function invoiceHtml(p: {
   invoiceNo: string; businessName: string; tierLabel: string; tierDesc: string;
-  amountUsd: number; checkoutUrl: string; date: string
+  amountUsd: number; checkoutUrl: string; date: string; sig: string
 }) {
   const row = (k: string, v: string) =>
     `<tr><td style="padding:4px 16px 4px 0;color:#8a8577;font-size:12px;white-space:nowrap;">${k}</td><td style="padding:4px 0;color:#2b2822;font-size:13px;">${v}</td></tr>`
@@ -97,6 +100,7 @@ function invoiceHtml(p: {
         live within 1 business day of payment. Questions? Just reply to this email.
       </p>
     </div>
+    ${p.sig}
   </div>
   <p style="color:#a39d8c;font-size:11px;text-align:center;margin:18px 0 0;">
     Insider Guide · <a href="${SITE}" style="color:#a39d8c;">insiderguide.co</a> · a BCAX LLC brand
@@ -104,8 +108,11 @@ function invoiceHtml(p: {
 </div></body></html>`
 }
 
-function welcomeHtml(p: { businessName: string; countrySlug: string | null }) {
-  const guideUrl = p.countrySlug ? `${SITE}/${p.countrySlug}` : SITE
+function welcomeHtml(p: { businessName: string; countrySlug: string | null; creatorHandle: string | null; sig: string }) {
+  // V3 URLs are creator-scoped: /<creator>/<country>
+  const guideUrl = p.countrySlug
+    ? `${SITE}/${p.creatorHandle || 'alexspexx'}/${p.countrySlug}`
+    : SITE
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f4f2ec;">
 <div style="max-width:600px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="background:#ffffff;padding:28px 32px;border-radius:14px;">
@@ -114,9 +121,9 @@ function welcomeHtml(p: { businessName: string; countrySlug: string | null }) {
       <strong>${p.businessName}</strong> is approved and now live in the directory —
       travelers browsing the guide can find you at <a href="${guideUrl}" style="color:#C8A55A;">${guideUrl}</a>.<br/><br/>
       Want to stand out? Featured and Partner placements pin you at the top with a
-      creator endorsement: <a href="${SITE}/partner" style="color:#C8A55A;">insiderguide.co/partner</a>.<br/><br/>
-      — The Insider Guide team
+      creator endorsement: <a href="${SITE}/partner" style="color:#C8A55A;">insiderguide.co/partner</a>.
     </p>
+    ${p.sig}
   </div>
 </div></body></html>`
 }
@@ -189,18 +196,23 @@ Deno.serve(async (req) => {
     const recipientEmail = action === 'approve_claim' ? claimRow!.email : biz.email
     if (!recipientEmail) throw new Error('no recipient email')
 
-    // SMTP creds — same lookup the CRM send-email fn uses.
+    // SMTP creds — same lookup the CRM send-email fn uses. Claims verify from
+    // hello@; application approvals/invoices from onboarding@.
+    const senderEmail = action === 'approve_claim' ? HELLO_SENDER : ONBOARDING_SENDER
     const { data: account } = await admin.from('email_accounts')
-      .select('email, from_name, smtp_host, smtp_port, smtp_user')
-      .eq('email', SENDER_EMAIL).single()
+      .select('email, from_name, smtp_host, smtp_port, smtp_user, signature_html')
+      .eq('email', senderEmail).single()
     if (!account) throw new Error('sender account missing')
-    let smtpPass = (await admin.rpc('get_smtp_password', { account_email: SENDER_EMAIL })).data as string
+    let smtpPass = (await admin.rpc('get_smtp_password', { account_email: senderEmail })).data as string
     if (!smtpPass) {
       const { data: acctRow } = await admin.from('email_accounts')
-        .select('smtp_pass_encrypted').eq('email', SENDER_EMAIL).single()
+        .select('smtp_pass_encrypted').eq('email', senderEmail).single()
       smtpPass = acctRow?.smtp_pass_encrypted || ''
     }
     if (!smtpPass) throw new Error('no SMTP password for sender')
+    const signatureBlock = account.signature_html
+      ? `<div style="border-top:1px solid #e8e4d8;margin-top:22px;padding-top:16px;">${account.signature_html}</div>`
+      : ''
 
     const transporter = nodemailer.createTransport({
       host: account.smtp_host || 'smtp.gmail.com',
@@ -209,31 +221,50 @@ Deno.serve(async (req) => {
       auth: { user: account.smtp_user || account.email, pass: smtpPass },
     })
 
-    // ── approve_claim: mark claimed + send the Complete ($50) upsell ──
+    // ── approve_claim: mark claimed + "you're verified" email (from hello@)
+    //    with the full tier ladder as the upsell ──
     if (action === 'approve_claim') {
-      const offer = TIER_OFFER.complete
-      const checkoutUrl = `${SITE}/checkout?tier=complete&biz=${targetBizId}`
+      const checkout = (t: string) => `${SITE}/checkout?tier=${t}&biz=${targetBizId}`
+      const tierRow = (t: 'complete' | 'featured' | 'partner') => {
+        const o = TIER_OFFER[t]
+        return `<tr>
+  <td style="padding:14px 0;border-top:1px solid #e8e4d8;vertical-align:top;">
+    <div style="color:#2b2822;font-size:14px;font-weight:600;">${o.label} — USD $${o.amountUsd}</div>
+    <div style="color:#6b675c;font-size:12px;line-height:1.6;margin-top:4px;">${o.desc}</div>
+  </td>
+  <td style="padding:14px 0 14px 16px;border-top:1px solid #e8e4d8;vertical-align:middle;white-space:nowrap;">
+    <a href="${checkout(t)}" style="display:inline-block;background:${t === 'complete' ? '#C8A55A' : '#ffffff'};color:${t === 'complete' ? '#0B0A08' : '#8a7443'};border:1px solid #C8A55A;text-decoration:none;text-align:center;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">
+      $${o.amountUsd}
+    </a>
+  </td>
+</tr>`
+      }
       await transporter.sendMail({
         from: `"${account.from_name || 'Insider Guide'}" <${account.email}>`,
         to: recipientEmail,
-        subject: `${biz.name} is yours on Insider Guide — make it stand out`,
+        subject: `${biz.name} is verified on Insider Guide`,
         html: `<!doctype html><html><body style="margin:0;padding:0;background:#f4f2ec;">
 <div style="max-width:600px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="background:#ffffff;padding:28px 32px;border-radius:14px;">
     <div style="color:#C8A55A;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:10px;">Insider Guide</div>
     <p style="color:#2b2822;font-size:14px;line-height:1.7;margin:0 0 18px;">
-      Your claim for <strong>${biz.name}</strong> is confirmed — the listing is yours.<br/><br/>
-      Right now it shows only the basics, and travelers scroll past bare listings
-      to the complete ones. The <strong>Complete</strong> upgrade (USD $${offer.amountUsd},
-      one-time) adds ${offer.desc}
+      Good news — we verified your claim, and <strong>${biz.name}</strong> is now
+      officially yours on Insider Guide.<br/><br/>
+      Right now the listing shows only the basics, and travelers tend to scroll past
+      bare listings to the complete ones. If you want it to work harder for you,
+      these are the upgrade options — each is a one-time payment, live within
+      1 business day:
     </p>
-    <a href="${checkoutUrl}"
-       style="display:block;background:#C8A55A;color:#0B0A08;text-decoration:none;text-align:center;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
-      Complete my listing — $${offer.amountUsd}
-    </a>
+    <table style="border-collapse:collapse;width:100%;margin:0 0 6px;">
+      ${tierRow('complete')}
+      ${tierRow('featured')}
+      ${tierRow('partner')}
+    </table>
     <p style="color:#8a8577;font-size:11px;line-height:1.6;margin:14px 0 0;">
-      Prefer a bank transfer or have questions? Just reply to this email.
+      No pressure — your verified listing stays live either way. Prefer a bank
+      transfer or have questions? Just reply to this email.
     </p>
+    ${signatureBlock}
   </div>
 </div></body></html>`,
       })
@@ -248,7 +279,7 @@ Deno.serve(async (req) => {
         await fetch('https://slack.com/api/chat.postMessage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${botToken}` },
-          body: JSON.stringify({ channel, text: `:white_check_mark: Claim approved — *${biz.name}* claimed by ${claimRow!.email}; Complete ($50) upsell sent.` }),
+          body: JSON.stringify({ channel, text: `:white_check_mark: Claim verified — *${biz.name}* claimed by ${claimRow!.email}; verification email + tier upsell sent from hello@.` }),
         }).catch(() => {})
       }
       return json({ ok: true, claim: 'approved' })
@@ -259,8 +290,19 @@ Deno.serve(async (req) => {
     let html: string
 
     if (effectiveTier === 'listed') {
+      let coveringHandle: string | null = null
+      if (coveringCreator) {
+        const { data: cw } = await admin.from('creators')
+          .select('handle').eq('id', coveringCreator).maybeSingle()
+        coveringHandle = cw?.handle || null
+      }
       subject = `${biz.name} is live on Insider Guide`
-      html = welcomeHtml({ businessName: biz.name, countrySlug: (biz as any).countries?.slug || null })
+      html = welcomeHtml({
+        businessName: biz.name,
+        countrySlug: (biz as any).countries?.slug || null,
+        creatorHandle: coveringHandle,
+        sig: signatureBlock,
+      })
     } else {
       const offer = TIER_OFFER[effectiveTier]
       // Idempotent numbering: an earlier attempt may have reserved a number
@@ -289,6 +331,7 @@ Deno.serve(async (req) => {
         amountUsd: offer.amountUsd,
         checkoutUrl,
         date: new Date().toISOString().slice(0, 10),
+        sig: signatureBlock,
       })
     }
 

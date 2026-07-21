@@ -28,28 +28,48 @@ function parseApp(notes) {
 
 export default function AdminApplications() {
   const [apps, setApps] = useState(null)
+  const [claims, setClaims] = useState([])
+  const [creatorByCountry, setCreatorByCountry] = useState({}) // country_id → @handle
   const [busyId, setBusyId] = useState(null)
   const [msg, setMsg] = useState(null)
   const [tierPick, setTierPick] = useState({}) // business_id → tier override
 
+  // Admin-scoped RPC returns every creator's pending queue (apps + claims),
+  // tagged with the covering creator's handle.
+  async function fetchAll() {
+    const [{ data }, { data: pending }, { data: countryRows }] = await Promise.all([
+      supabase.from('businesses')
+        .select('id, name, email, city, category, website, instagram_handle, notes, published, tier_paid, paid_pending_tier, created_at, country_id, countries(name, flag_emoji, slug)')
+        .ilike('notes', '%[partner-signup%')
+        .order('created_at', { ascending: false })
+        .limit(200),
+      supabase.rpc('creator_pending_approvals'),
+      supabase.from('countries').select('id, creators(handle)'),
+    ])
+    const map = {}
+    for (const c of countryRows || []) if (c.creators?.handle) map[c.id] = c.creators.handle
+    return { apps: data || [], claims: (pending || []).filter((p) => p.kind === 'claim'), map }
+  }
+
   async function load() {
-    const { data } = await supabase.from('businesses')
-      .select('id, name, email, city, category, website, instagram_handle, notes, published, tier_paid, paid_pending_tier, created_at, countries(name, flag_emoji, slug)')
-      .ilike('notes', '%[partner-signup%')
-      .order('created_at', { ascending: false })
-      .limit(200)
-    setApps(data || [])
+    try {
+      const r = await fetchAll()
+      setApps(r.apps); setClaims(r.claims); setCreatorByCountry(r.map)
+    } catch {
+      setApps([])
+    }
   }
 
   useEffect(() => {
     let cancelled = false
     async function init() {
-      const { data } = await supabase.from('businesses')
-        .select('id, name, email, city, category, website, instagram_handle, notes, published, tier_paid, paid_pending_tier, created_at, countries(name, flag_emoji, slug)')
-        .ilike('notes', '%[partner-signup%')
-        .order('created_at', { ascending: false })
-        .limit(200)
-      if (!cancelled) setApps(data || [])
+      try {
+        const r = await fetchAll()
+        if (cancelled) return
+        setApps(r.apps); setClaims(r.claims); setCreatorByCountry(r.map)
+      } catch {
+        if (!cancelled) setApps([])
+      }
     }
     init()
     return () => { cancelled = true }
@@ -70,6 +90,19 @@ export default function AdminApplications() {
     load()
   }
 
+  async function actClaim(claim, action) {
+    setBusyId(claim.ref_id); setMsg(null)
+    const { data, error } = await supabase.functions.invoke('approve-application', {
+      body: { action: action === 'approve' ? 'approve_claim' : 'reject_claim', claim_id: claim.ref_id },
+    })
+    setBusyId(null)
+    if (error || data?.error) { setMsg(`Error: ${error?.message || data.error}`); return }
+    setMsg(action === 'approve'
+      ? `Claim verified — email + tier upsell sent from hello@ to ${claim.email}.`
+      : `Claim rejected for ${claim.business_name}.`)
+    load()
+  }
+
   if (apps === null) return <div className="max-w-5xl mx-auto px-6 py-8"><p className="text-text-dim text-sm">Loading…</p></div>
 
   const pending = apps.filter((a) => { const p = parseApp(a.notes); return !p.approved && !p.rejected })
@@ -83,6 +116,11 @@ export default function AdminApplications() {
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm text-white">{app.name}</span>
           <span className="text-xs text-text-dim">{app.countries?.flag_emoji} {app.countries?.name}{app.city ? ` · ${app.city}` : ''} · {app.category}</span>
+          {creatorByCountry[app.country_id] && (
+            <span className="text-[10px] text-text-dim border border-border px-2 py-0.5 rounded-full">
+              @{creatorByCountry[app.country_id]}
+            </span>
+          )}
           <span className="text-[10px] uppercase tracking-wider text-gold border border-gold/30 px-2 py-0.5 rounded-full">
             wants {p.tier} ({TIER_PRICES[p.tier]})
           </span>
@@ -137,6 +175,38 @@ export default function AdminApplications() {
         Approve paid tiers → applicant gets an invoice (bank details + card payment link). Payment flips the tier automatically.
       </p>
       {msg && <p className="text-xs text-gold mb-4">{msg}</p>}
+
+      {claims.length > 0 && (
+        <>
+          <h2 className="text-[10px] uppercase tracking-wider text-text-dim mb-2">Claim requests ({claims.length})</h2>
+          <div className="flex flex-col gap-2 mb-8">
+            {claims.map((c) => (
+              <div key={c.ref_id} className="bg-bg-card border border-gold/25 rounded-xl p-4 flex flex-col gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-sm text-white">{c.business_name}</span>
+                  <span className="text-xs text-text-dim">{c.country_name}{c.city ? ` · ${c.city}` : ''} · {c.category}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-gold border border-gold/30 px-2 py-0.5 rounded-full">claim</span>
+                  {c.creator_handle && (
+                    <span className="text-[10px] text-text-dim border border-border px-2 py-0.5 rounded-full">@{c.creator_handle}</span>
+                  )}
+                  <span className="text-xs text-text-dim">{c.email}</span>
+                </div>
+                {c.pitch && <p className="text-xs text-text-secondary leading-relaxed">{c.pitch}</p>}
+                <div className="flex items-center gap-2 pt-1">
+                  <button onClick={() => actClaim(c, 'approve')} disabled={busyId === c.ref_id}
+                          className="text-xs uppercase tracking-wider bg-gold text-bg px-4 py-1.5 rounded-sm cursor-pointer disabled:opacity-50">
+                    {busyId === c.ref_id ? '…' : 'Verify + send upsell'}
+                  </button>
+                  <button onClick={() => actClaim(c, 'reject')} disabled={busyId === c.ref_id}
+                          className="text-xs uppercase tracking-wider text-red-400/70 border border-border px-3 py-1.5 rounded-lg hover:text-red-400 cursor-pointer">
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="text-[10px] uppercase tracking-wider text-text-dim mb-2">Pending ({pending.length})</h2>
       <div className="flex flex-col gap-2 mb-8">

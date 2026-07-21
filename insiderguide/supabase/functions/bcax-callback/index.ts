@@ -181,14 +181,17 @@ Deno.serve(async (req: Request) => {
     );
     return json({ ok: true, action: "ignored_already_paid" });
   }
-  // Only rows that are actually awaiting payment are promotable: a checkout
-  // pending row (paid_pending_tier set) or an invoiced application ([invoice
-  // marker). Blocks drive-by payments against arbitrary public listing ids.
+  // Promotable rows: a checkout pending row (paid_pending_tier set), an
+  // invoiced application ([invoice marker), or a LIVE published listing —
+  // that last case is the claim-upsell / find-your-business path where the
+  // owner pays an upgrade against their existing public row. What stays
+  // blocked: unpublished junk rows with no payment context.
   const isPayable =
     body.customer_external_id === existing.id &&
     ((existing as { paid_pending_tier?: string | null }).paid_pending_tier != null ||
       /\[invoice IG-/.test(existing.notes || "") ||
-      / \(pending /i.test(existing.name || ""));
+      / \(pending /i.test(existing.name || "") ||
+      existing.published === true);
   if (!isPayable) {
     await slackPing(
       `:warning: Payment for *${targetTier}* against non-payable row “${existing.name}” ` +

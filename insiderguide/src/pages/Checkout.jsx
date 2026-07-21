@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckoutForm } from '../components/checkout/CheckoutForm'
@@ -34,9 +34,155 @@ const TIERS = {
   },
 }
 
+// No-tier landing: pick a tier, then find your listing by name + country so
+// payment lands on YOUR row (not a fresh placeholder). Owners arrive here from
+// outreach emails that don't carry a ?biz= reference.
+function FindYourBusiness({ creatorRef }) {
+  const navigate = useNavigate()
+  const [countries, setCountries] = useState([])
+  const [tierPick, setTierPick] = useState('complete')
+  const [countryId, setCountryId] = useState('')
+  const [name, setName] = useState('')
+  const [results, setResults] = useState(null) // null = not searched yet
+  const [searching, setSearching] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('countries')
+      .select('id, name, flag_emoji')
+      .eq('published', true)
+      .order('name')
+      .then(({ data }) => { if (!cancelled) setCountries(data || []) })
+    return () => { cancelled = true }
+  }, [])
+
+  async function search(e) {
+    e.preventDefault()
+    const q = name.trim().replace(/[%_]/g, ' ').trim()
+    if (q.length < 2 || !countryId || searching) return
+    setSearching(true)
+    const { data } = await supabase
+      .from('public_businesses')
+      .select('id, name, city, category, tier_paid')
+      .eq('country_id', countryId)
+      .ilike('name', `%${q}%`)
+      .order('name')
+      .limit(6)
+    setResults(data || [])
+    setSearching(false)
+  }
+
+  const refQ = creatorRef ? `&ref=${creatorRef}` : ''
+  const goPay = (bizId) =>
+    navigate(`/checkout?tier=${tierPick}&biz=${bizId}${refQ}`)
+
+  const inputClass = 'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-[14px] text-text placeholder:text-text-dim/60 focus:border-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 transition-all'
+
+  return (
+    <div className="min-h-screen text-text">
+      <Seo title="Upgrade your listing" path="/checkout" noindex />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-14 md:py-20">
+        <Link to="/" className="text-[11px] text-text-dim tracking-[0.1em] uppercase no-underline hover:text-accent">← Insider Guide</Link>
+        <h1 className="font-display text-[clamp(2rem,4vw,2.75rem)] leading-[1.05] mt-8 mb-3">
+          Upgrade your listing
+        </h1>
+        <p className="text-text-secondary text-[15px] leading-[1.65] mb-8">
+          Pick a placement, then find your business so the upgrade lands on the right listing.
+        </p>
+
+        {/* Step 1 — tier */}
+        <div className="text-[11px] tracking-[0.12em] uppercase text-text-dim mb-3">1 · Choose your placement</div>
+        <div className="grid sm:grid-cols-3 gap-3 mb-8">
+          {Object.values(TIERS).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTierPick(t.key)}
+              className={`text-left border rounded-xl p-4 transition-all cursor-pointer ${
+                tierPick === t.key
+                  ? 'border-accent/60 bg-accent/8'
+                  : 'border-border bg-bg-card hover:border-border-hover'
+              }`}
+            >
+              <div className="font-display text-lg text-text">{t.name}</div>
+              <div className="font-display text-2xl text-accent mb-1.5">${(t.amount_cents / 100).toFixed(0)}</div>
+              <div className="text-[11px] text-text-dim leading-relaxed">{t.description}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Step 2 — find the listing */}
+        <div className="text-[11px] tracking-[0.12em] uppercase text-text-dim mb-3">2 · Find your business</div>
+        <form onSubmit={search} className="border border-border rounded-xl p-5 bg-bg-card flex flex-col gap-3 mb-4">
+          <select
+            value={countryId}
+            onChange={(e) => { setCountryId(e.target.value); setResults(null) }}
+            required
+            className={inputClass}
+          >
+            <option value="">Country *</option>
+            {countries.map((c) => (
+              <option key={c.id} value={c.id}>{c.flag_emoji} {c.name}</option>
+            ))}
+          </select>
+          <input
+            value={name}
+            onChange={(e) => { setName(e.target.value); setResults(null) }}
+            required
+            minLength={2}
+            placeholder="Business name *"
+            className={inputClass}
+          />
+          <button
+            type="submit"
+            disabled={searching || !countryId || name.trim().length < 2}
+            className="bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {searching ? 'Searching…' : 'Find my business'}
+          </button>
+        </form>
+
+        {results !== null && results.length > 0 && (
+          <div className="flex flex-col gap-2 mb-4">
+            <p className="text-[12px] text-text-secondary">Is this your business?</p>
+            {results.map((b) => (
+              <div key={b.id} className="border border-border rounded-xl p-4 bg-bg-card flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm text-text">{b.name}</div>
+                  <div className="text-[11px] text-text-dim">{b.city || '—'} · {b.category}</div>
+                </div>
+                {b.tier_paid ? (
+                  <span className="text-[10px] uppercase tracking-wider text-text-dim whitespace-nowrap">Already upgraded</span>
+                ) : (
+                  <button
+                    onClick={() => goPay(b.id)}
+                    className="text-[11px] tracking-[0.08em] uppercase font-medium bg-accent text-bg px-4 py-2 rounded-lg hover:bg-accent/85 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    Yes — upgrade this
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {results !== null && results.length === 0 && (
+          <p className="text-[13px] text-text-secondary mb-4">
+            No match for &ldquo;{name.trim()}&rdquo; in that country. Try a shorter name, or{' '}
+            <Link to="/partner" className="text-accent">apply to be added</Link>.
+          </p>
+        )}
+
+        <p className="text-[11px] text-text-dim leading-relaxed">
+          Not listed yet? <Link to="/partner" className="text-accent">Apply on the partner page</Link> —
+          or <button onClick={() => navigate(`/checkout?tier=${tierPick}${refQ}`)} className="text-accent cursor-pointer underline-offset-2 hover:underline">continue without a listing</button> and we&rsquo;ll match your payment by email.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Checkout() {
   const [params] = useSearchParams()
-  const navigate = useNavigate()
 
   const tierKey = params.get('tier')
   const tier = TIERS[tierKey]
@@ -75,24 +221,10 @@ export default function Checkout() {
     [tierKey, pendingBusinessId]
   )
 
-  // Bad / missing tier param — bounce back to Partner.
+  // Missing tier param — outreach emails link straight here, so instead of a
+  // dead-end we let the owner pick a tier and find their existing listing.
   if (!tier) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="border border-border rounded-xl p-8 bg-bg-card max-w-md w-full text-center">
-          <h2 className="font-display text-2xl text-text mb-3">Pick a tier first</h2>
-          <p className="text-text-secondary text-sm mb-6">
-            Head back to the Partner page and choose Featured or Partner to continue.
-          </p>
-          <button
-            onClick={() => navigate('/partner')}
-            className="bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer"
-          >
-            Back to tiers
-          </button>
-        </div>
-      </div>
-    )
+    return <FindYourBusiness creatorRef={creatorRef} />
   }
 
   const handleEmailSubmit = async (e) => {
