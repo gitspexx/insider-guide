@@ -37,6 +37,16 @@ export default function Checkout() {
   const refParam = params.get('ref') || ''
   const creatorRef = /^creator_[a-z0-9_]{3,30}$/.test(refParam) ? refParam : null
 
+  // Invoice emails and payment retries link back with ?biz=<businesses.id>.
+  // When present we pay against THAT row instead of creating a fresh
+  // placeholder — otherwise the approved application never gets promoted and
+  // a junk row goes live instead.
+  const bizParam = params.get('biz') || ''
+  const invoiceBizId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bizParam)
+      ? bizParam
+      : null
+
   const [email, setEmail] = useState('')
   const [emailConfirmed, setEmailConfirmed] = useState(false)
   const [emailError, setEmailError] = useState(null)
@@ -87,6 +97,13 @@ export default function Checkout() {
     }
     setEmailError(null)
     setEmail(trimmed)
+
+    // Invoice / retry flow: the target row already exists — pay against it.
+    if (invoiceBizId) {
+      setPendingBusinessId(invoiceBizId)
+      setEmailConfirmed(true)
+      return
+    }
 
     // Pre-create the pending businesses row. We need its id BEFORE Stripe
     // confirms — the bcax-callback needs a stable handle to flip on success.

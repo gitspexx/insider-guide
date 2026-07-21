@@ -101,24 +101,24 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      // Active creators + their public (visible) spot counts. anon RLS on
-      // creator_saves only returns rows where hidden=false AND the creator is
-      // active, so a bare creator_id select + client-side tally is exact.
-      const [creatorsRes, savesRes] = await Promise.all([
-        supabase
-          .from('creators')
-          .select('id,handle,display_name,avatar_url,bio')
-          .eq('status', 'active'),
-        supabase.from('creator_saves').select('creator_id'),
-      ])
-      if (cancelled || !creatorsRes.data) return
-      const spotCounts = {}
-      for (const s of savesRes.data || []) {
-        spotCounts[s.creator_id] = (spotCounts[s.creator_id] || 0) + 1
-      }
-      setCreators(
-        creatorsRes.data.map((c) => ({ ...c, spots: spotCounts[c.id] || 0 }))
-      )
+      // Active creators + their public (visible) spot counts. Head-count
+      // queries per creator — exact past the PostgREST 1000-row cap and no
+      // row payload (previously fetched every creator_saves row to tally).
+      const { data: creatorRows } = await supabase
+        .from('creators')
+        .select('id,handle,display_name,avatar_url,bio')
+        .eq('status', 'active')
+      if (cancelled || !creatorRows) return
+      const withCounts = await Promise.all(creatorRows.map(async (c) => {
+        const { count } = await supabase
+          .from('creator_saves')
+          .select('id', { count: 'exact', head: true })
+          .eq('creator_id', c.id)
+          .eq('hidden', false)
+        return { ...c, spots: count || 0 }
+      }))
+      if (cancelled) return
+      setCreators(withCounts)
     }
     load()
     return () => { cancelled = true }

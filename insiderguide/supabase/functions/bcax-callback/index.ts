@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
   // Idempotency check — if the row is already promoted, no-op.
   const { data: existing, error: readErr } = await supabase
     .from("businesses")
-    .select("id, tier, published, paid_at")
+    .select("id, name, email, tier, tier_paid, published, paid_at, notes")
     .eq("id", businessId)
     .maybeSingle();
   if (readErr) {
@@ -147,16 +147,25 @@ Deno.serve(async (req: Request) => {
     console.warn("bcax-callback: no businesses row matches", businessId);
     return json({ ok: true, action: "ignored_no_matching_row" });
   }
-  if (existing.tier === targetTier && existing.published === true) {
+  if (existing.tier === targetTier && existing.tier_paid === true) {
     return json({ ok: true, action: "already_promoted" });
   }
+
+  // Placeholder rows (created at checkout with only an email — name like
+  // "john (pending Partner)" and a seeded country) must NOT go live as-is:
+  // paid hero/featured slots would show junk names in the wrong country.
+  // Promote the tier + payment flags but keep them unpublished; the Slack
+  // ping below tells the admin to fill in details and publish.
+  const isPlaceholder =
+    / \(pending /i.test(existing.name || "") ||
+    (existing.notes || "").startsWith("[partner-signup-paid]");
 
   const { error: updErr } = await supabase
     .from("businesses")
     .update({
       tier: targetTier,
       tier_paid: true,
-      published: true,
+      published: isPlaceholder ? false : true,
       paid_pending_tier: null,
       paid_at: new Date().toISOString(),
     })
@@ -166,5 +175,29 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Update failed", detail: updErr.message }, 500);
   }
 
-  return json({ ok: true, action: "promoted", tier: targetTier });
+  // Payment Slack ping (best effort — never fail the webhook over it).
+  try {
+    const botToken = Deno.env.get("SLACK_BOT_TOKEN") || "";
+    const channel = Deno.env.get("INSIDER_GUIDE_APPLICATIONS_CHANNEL") || "";
+    if (botToken && channel) {
+      const amount = targetTier === "partner" ? "$500" : "$200";
+      const text = isPlaceholder
+        ? `:moneybag: PAID — *${existing.name}* (${existing.email || "no email"}) paid ${amount} for *${targetTier}*. Placeholder row: complete the listing details in /admin and publish.`
+        : `:moneybag: PAID — *${existing.name}* paid ${amount} for *${targetTier}* — now live.`;
+      await fetch("https://slack.com/api/chat.postMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${botToken}` },
+        body: JSON.stringify({ channel, text }),
+      });
+    }
+  } catch (e) {
+    console.error("bcax-callback: slack notify failed", e);
+  }
+
+  return json({
+    ok: true,
+    action: "promoted",
+    tier: targetTier,
+    published: !isPlaceholder,
+  });
 });

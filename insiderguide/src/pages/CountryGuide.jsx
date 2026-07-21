@@ -74,13 +74,25 @@ export default function CountryGuide() {
 
         setCreatorHandle(null)
         setCountry(countryData)
-        const { data: bizData } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('country_id', countryData.id)
-          .eq('published', true)
-          .order('name')
-        setBusinesses(bizData || [])
+        // public_businesses view = safe-column projection of published rows
+        // (the base table is no longer anon-readable). Paginate past the
+        // PostgREST 1000-row cap so big countries render completely.
+        const cols = 'id, name, category, description, city, location, ' +
+          'google_maps_url, website, instagram_handle, tier, tier_paid, ' +
+          'photo_url, recommended_badge, top_pick_rank, lat, lng'
+        let allBiz = []
+        for (let off = 0; ; off += 1000) {
+          const { data: page, error: pageErr } = await supabase
+            .from('public_businesses')
+            .select(cols)
+            .eq('country_id', countryData.id)
+            .order('name')
+            .range(off, off + 999)
+          if (pageErr || !page || page.length === 0) break
+          allBiz = allBiz.concat(page)
+          if (page.length < 1000) break
+        }
+        setBusinesses(allBiz)
       } catch (err) {
         console.error('CountryGuide load error:', err)
       } finally {

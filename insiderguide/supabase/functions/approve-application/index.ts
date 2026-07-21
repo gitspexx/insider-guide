@@ -174,16 +174,12 @@ Deno.serve(async (req) => {
     if (effectiveTier === 'listed') {
       subject = `${biz.name} is live on Insider Guide`
       html = welcomeHtml({ businessName: biz.name, countrySlug: (biz as any).countries?.slug || null })
-      await admin.from('businesses')
-        .update({ published: true, notes: `${biz.notes || ''} [application-approved listed]`.trim() })
-        .eq('id', business_id)
     } else {
       const offer = TIER_OFFER[effectiveTier]
-      // Sequential-enough invoice number: count of previously invoiced applications + 1.
-      const { count } = await admin.from('businesses')
-        .select('id', { count: 'exact', head: true }).ilike('notes', '%[invoice IG-%')
-      const year = new Date().getFullYear()
-      invoiceNo = `IG-${year}-${String((count || 0) + 1).padStart(3, '0')}`
+      // Sequence-backed invoice number (race-safe, survives note edits).
+      const { data: nextNo, error: seqErr } = await admin.rpc('next_ig_invoice_no')
+      if (seqErr || !nextNo) throw new Error(`invoice numbering failed: ${seqErr?.message}`)
+      invoiceNo = nextNo as string
       const checkoutUrl = `${SITE}/checkout?tier=${effectiveTier}&biz=${business_id}`
       subject = `Invoice ${invoiceNo} — ${offer.label} placement for ${biz.name}`
       html = invoiceHtml({
@@ -195,6 +191,23 @@ Deno.serve(async (req) => {
         checkoutUrl,
         date: new Date().toISOString().slice(0, 10),
       })
+    }
+
+    // Email FIRST — if SMTP fails we throw and the row stays untouched, so
+    // the admin can just retry. (Previously the row was marked approved even
+    // when the applicant never got the email.)
+    await transporter.sendMail({
+      from: `"${account.from_name || 'Insider Guide'}" <${account.email}>`,
+      to: biz.email,
+      subject,
+      html,
+    })
+
+    if (effectiveTier === 'listed') {
+      await admin.from('businesses')
+        .update({ published: true, notes: `${biz.notes || ''} [application-approved listed]`.trim() })
+        .eq('id', business_id)
+    } else {
       await admin.from('businesses')
         .update({
           outreach_status: 'invoiced',
@@ -202,13 +215,6 @@ Deno.serve(async (req) => {
         })
         .eq('id', business_id)
     }
-
-    await transporter.sendMail({
-      from: `"${account.from_name || 'Insider Guide'}" <${account.email}>`,
-      to: biz.email,
-      subject,
-      html,
-    })
 
     // Slack heads-up (best effort)
     const botToken = Deno.env.get('SLACK_BOT_TOKEN') || ''

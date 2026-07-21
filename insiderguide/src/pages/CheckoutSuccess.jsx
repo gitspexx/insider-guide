@@ -167,7 +167,11 @@ export default function CheckoutSuccess() {
             </p>
             <div className="space-y-2.5">
               <button
-                onClick={() => navigate(tier ? `/checkout?tier=${tier}` : '/partner')}
+                onClick={() => navigate(tier
+                  // Reuse the same pending row on retry (ref = businesses.id):
+                  // keeps the creator referral marker + avoids duplicate rows.
+                  ? `/checkout?tier=${tier}${reference ? `&biz=${reference}` : ''}`
+                  : '/partner')}
                 className="w-full bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               >
                 Try again

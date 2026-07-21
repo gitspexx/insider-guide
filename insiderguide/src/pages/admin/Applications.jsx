@@ -9,17 +9,21 @@ import { supabase } from '../../lib/supabase'
 const TIER_PRICES = { listed: 'free', featured: '$200', partner: '$500' }
 
 function parseApp(notes) {
-  const tier = notes?.match(/Tier interest: (\w+)/)?.[1] || 'listed'
+  // Free-form applications say "Tier interest: X"; checkout pending rows say
+  // "Tier intent: X" with a [partner-signup-paid] marker.
+  const tier = notes?.match(/Tier inte(?:rest|nt): (\w+)/)?.[1] || 'listed'
+  const paidPending = /\[partner-signup-paid\]/.test(notes || '')
   const approved = /\[application-approved/.test(notes || '')
   const rejected = /\[application-rejected\]/.test(notes || '')
   const invoice = notes?.match(/\[invoice (IG-[\d-]+)\]/)?.[1] || null
   const pitch = (notes || '')
-    .replace(/\[partner-signup\][^.]*\.( Prefers a quick call\.)?/, '')
+    .replace(/\[partner-signup(-paid)?\][^.]*\.( Prefers a quick call\.)?/, '')
     .replace(/\[application-[^\]]*\]/g, '')
     .replace(/\[invoice [^\]]*\]/g, '')
+    .replace(/\[ref [^\]]*\]/g, '')
     .trim()
   const prefersCall = /Prefers a quick call/.test(notes || '')
-  return { tier, approved, rejected, invoice, pitch, prefersCall }
+  return { tier, paidPending, approved, rejected, invoice, pitch, prefersCall }
 }
 
 export default function AdminApplications() {
@@ -30,8 +34,8 @@ export default function AdminApplications() {
 
   async function load() {
     const { data } = await supabase.from('businesses')
-      .select('id, name, email, city, category, website, instagram_handle, notes, published, created_at, countries(name, flag_emoji, slug)')
-      .ilike('notes', '%[partner-signup]%')
+      .select('id, name, email, city, category, website, instagram_handle, notes, published, tier_paid, paid_pending_tier, created_at, countries(name, flag_emoji, slug)')
+      .ilike('notes', '%[partner-signup%')
       .order('created_at', { ascending: false })
       .limit(200)
     setApps(data || [])
@@ -41,8 +45,8 @@ export default function AdminApplications() {
     let cancelled = false
     async function init() {
       const { data } = await supabase.from('businesses')
-        .select('id, name, email, city, category, website, instagram_handle, notes, published, created_at, countries(name, flag_emoji, slug)')
-        .ilike('notes', '%[partner-signup]%')
+        .select('id, name, email, city, category, website, instagram_handle, notes, published, tier_paid, paid_pending_tier, created_at, countries(name, flag_emoji, slug)')
+        .ilike('notes', '%[partner-signup%')
         .order('created_at', { ascending: false })
         .limit(200)
       if (!cancelled) setApps(data || [])
@@ -86,6 +90,16 @@ export default function AdminApplications() {
           {p.invoice && <span className="text-[10px] text-gold">{p.invoice}</span>}
           {p.rejected && <span className="text-[10px] uppercase text-red-400/70">rejected</span>}
           {p.approved && <span className="text-[10px] uppercase text-green-400/70">approved</span>}
+          {p.paidPending && !app.tier_paid && (
+            <span className="text-[10px] uppercase tracking-wider text-text-dim border border-border px-2 py-0.5 rounded-full">awaiting payment</span>
+          )}
+          {app.tier_paid && !app.published && (
+            <a href={`/admin/businesses/${app.id}/edit`}
+               className="text-[10px] uppercase tracking-wider text-bg bg-gold px-2 py-0.5 rounded-full no-underline">
+              PAID — complete details &amp; publish →
+            </a>
+          )}
+          {app.tier_paid && app.published && <span className="text-[10px] uppercase text-green-400">paid · live</span>}
         </div>
         <div className="text-xs text-text-dim flex gap-3 flex-wrap">
           <span>{app.email}</span>

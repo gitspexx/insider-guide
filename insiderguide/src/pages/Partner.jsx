@@ -142,22 +142,12 @@ export default function Partner() {
       if (data) setCountries(data)
     }
     async function loadFeaturedCounts() {
-      // Paginate to count featured + partner per country
-      let all = []
-      let off = 0
-      while (true) {
-        const { data, error } = await supabase
-          .from('businesses')
-          .select('country_id, tier')
-          .in('tier', ['featured', 'partner'])
-          .range(off, off + 999)
-        if (error || !data || data.length === 0) break
-        all = all.concat(data)
-        if (data.length < 1000) break
-        off += 1000
-      }
+      // Single RPC instead of paginating tens of thousands of rows. Slot
+      // scarcity counts PAID placements only — the ~25k scraper-imported rows
+      // with tier='featured' are display curation, not sold slots.
+      const { data } = await supabase.rpc('country_business_counts')
       const map = {}
-      for (const b of all) map[b.country_id] = (map[b.country_id] || 0) + 1
+      for (const row of data || []) map[row.country_id] = Number(row.paid) || 0
       setFeaturedByCountry(map)
     }
     loadCountries()

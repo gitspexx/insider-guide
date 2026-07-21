@@ -84,21 +84,12 @@ export default function CreatorPage({ handle: handleProp }) {
         .from('countries').select('*').order('name')
       if (cancelled || error) return
       setCatalogCountries(countryData || [])
-      // Paginate all businesses to tally per-country place counts.
-      let allBiz = []
-      let offset = 0
-      while (true) {
-        const { data, error: bizErr } = await supabase
-          .from('businesses').select('country_id').range(offset, offset + 999)
-        if (cancelled) return
-        if (bizErr || !data || data.length === 0) break
-        allBiz = allBiz.concat(data)
-        if (data.length < 1000) break
-        offset += 1000
-      }
+      // Per-country counts in ONE request (previously ~64 sequential
+      // 1000-row scans of the whole businesses table — multi-second load).
+      const { data: counts } = await supabase.rpc('country_business_counts')
       if (cancelled) return
       const map = {}
-      allBiz.forEach((b) => { map[b.country_id] = (map[b.country_id] || 0) + 1 })
+      for (const row of counts || []) map[row.country_id] = Number(row.total) || 0
       setCatalogCounts(map)
     }
     loadCatalog()
