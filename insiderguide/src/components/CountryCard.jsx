@@ -12,7 +12,7 @@ const COUNTRY_GRADIENTS = {
 
 const DEFAULT_GRADIENT = 'from-stone-800/15 via-transparent to-stone-900/10'
 
-export default function CountryCard({ country, count, locked, onLockedClick, index = 0, comingSoon = false }) {
+export default function CountryCard({ country, count, locked, onLockedClick, index = 0, comingSoon = false , linkPrefix }) {
   const gradient = COUNTRY_GRADIENTS[country.slug] || DEFAULT_GRADIENT
 
   const cardContent = (
@@ -83,7 +83,7 @@ export default function CountryCard({ country, count, locked, onLockedClick, ind
       transition={{ duration: 0.5, delay: 0.15 + index * 0.08 }}
     >
       <Link
-        to={`/${country.slug}`}
+        to={`${linkPrefix || ''}/${country.slug}`}
         className="relative flex flex-col min-h-[150px] bg-bg-card border border-border rounded-xl p-5 no-underline group overflow-hidden transition-all duration-400 hover:border-border-accent hover:bg-bg-elevated hover:shadow-[0_8px_40px_rgba(200,165,90,0.05)]"
       >
         {cardContent}

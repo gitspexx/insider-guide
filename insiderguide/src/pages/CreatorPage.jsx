@@ -216,7 +216,7 @@ export default function CreatorPage({ handle: handleProp }) {
         {(() => {
           const active = countries.find((c) => c.id === activeCountryId)
           return active?.published ? (
-            <a href={`/${active.slug}`}
+            <a href={`/${creator.handle}/${active.slug}`}
                className="text-[11px] uppercase tracking-wider px-3 py-1.5 rounded-full border border-accent/30 text-accent hover:bg-accent/8 transition-colors">
               Full {active.name} guide →
             </a>
@@ -273,6 +273,7 @@ export default function CreatorPage({ handle: handleProp }) {
                   <CountryCard
                     key={country.id}
                     country={country}
+                    linkPrefix={`/${creator.handle}`}
                     count={catalogCounts[country.id] || 0}
                     locked={false}
                     index={index}
@@ -294,6 +295,7 @@ export default function CreatorPage({ handle: handleProp }) {
                   <CountryCard
                     key={country.id}
                     country={country}
+                    linkPrefix={`/${creator.handle}`}
                     count={catalogCounts[country.id] || 0}
                     locked={!hasAccess(country.slug)}
                     onLockedClick={() => setPaywallCountry(country)}
@@ -316,6 +318,7 @@ export default function CreatorPage({ handle: handleProp }) {
                   <CountryCard
                     key={country.id}
                     country={country}
+                    linkPrefix={`/${creator.handle}`}
                     count={0}
                     locked={true}
                     onLockedClick={() => setPaywallCountry(country)}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import BusinessCard from '../components/BusinessCard'
@@ -40,19 +40,41 @@ function SectionHeader({ number, title, subtitle, count }) {
 }
 
 export default function CountryGuide() {
-  const { slug } = useParams()
+  // V3 URL model: guides live at /<creator>/<country>. A bare /<country> hit
+  // redirects to the covering creator's guide; a bare /<creator> hit renders
+  // the creator page inline (RR7 can't param-match /@handle, so both shapes
+  // flow through here).
+  const { slug, country: countryParam } = useParams()
   const [country, setCountry] = useState(null)
   const [creatorHandle, setCreatorHandle] = useState(null)
+  const [guideCreator, setGuideCreator] = useState(null)   // { handle, display_name }
+  const [redirectTo, setRedirectTo] = useState(null)
   const [businesses, setBusinesses] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
+        const countrySlug = countryParam || slug
+
+        // Creator-scoped shape: /<creator>/<country> — resolve the creator
+        // for the breadcrumb; unknown creator falls back to the covering one.
+        let scopedCreator = null
+        if (countryParam) {
+          const handle = slug.replace(/^@/, '').toLowerCase()
+          const { data: cr } = await supabase
+            .from('creators')
+            .select('handle, display_name')
+            .eq('handle', handle)
+            .eq('status', 'active')
+            .maybeSingle()
+          scopedCreator = cr || null
+        }
+
         const { data: countryData, error: countryErr } = await supabase
           .from('countries')
           .select('*')
-          .eq('slug', slug)
+          .eq('slug', countrySlug)
           .eq('published', true)
           .maybeSingle()
 
@@ -67,9 +89,35 @@ export default function CountryGuide() {
             .eq('handle', handle)
             .eq('status', 'active')
             .maybeSingle()
-          setCreatorHandle(creatorHit ? creatorHit.handle : null)
+          setCreatorHandle(creatorHit && !countryParam ? creatorHit.handle : null)
           setLoading(false)
           return
+        }
+
+        // Bare /<country> hit: guides are creator-scoped in V3 — redirect to
+        // the covering creator's guide URL (keeps old links working).
+        if (!countryParam) {
+          const { data: covering } = await supabase
+            .from('creators')
+            .select('handle')
+            .eq('id', countryData.creator_id)
+            .maybeSingle()
+          setRedirectTo(`/${covering?.handle || 'alexspexx'}/${countrySlug}`)
+          setLoading(false)
+          return
+        }
+
+        // Resolve the covering creator for the breadcrumb — the URL's creator
+        // if valid, else the country's assigned one.
+        if (scopedCreator) {
+          setGuideCreator(scopedCreator)
+        } else {
+          const { data: covering } = await supabase
+            .from('creators')
+            .select('handle, display_name')
+            .eq('id', countryData.creator_id)
+            .maybeSingle()
+          if (covering) setGuideCreator(covering)
         }
 
         setCreatorHandle(null)
@@ -103,7 +151,7 @@ export default function CountryGuide() {
       }
     }
     load()
-  }, [slug])
+  }, [slug, countryParam])
 
   // Top picks: manually curated (top_pick_rank) when the country has any,
   // otherwise fall back to tier/recommended so uncurated countries still show.
@@ -143,7 +191,7 @@ export default function CountryGuide() {
   categoryGroupData.forEach((g) => navSections.push({ key: g.key, label: g.label }))
   if (uncategorized.length > 0) navSections.push({ key: 'other', label: 'Other' })
 
-  const canonicalPath = `/${slug}`
+  const canonicalPath = countryParam ? `/${slug}/${countryParam}` : `/${slug}`
   const seoDescription = country
     ? (country.tagline
         ? `${country.tagline} — ${businesses.length} hand-picked places to eat, stay & explore in ${country.name}.`
@@ -200,6 +248,9 @@ export default function CountryGuide() {
     )
   }
 
+  // Bare country URL → creator-scoped guide URL.
+  if (redirectTo) return <Navigate to={redirectTo} replace />
+
   // Creator dispatch: the slug matched an active creator, not a country.
   if (creatorHandle) return <CreatorPage handle={creatorHandle} />
 
@@ -234,9 +285,10 @@ export default function CountryGuide() {
         style={{ background: 'rgba(11, 10, 8, 0.72)', backdropFilter: 'blur(16px) saturate(1.2)', WebkitBackdropFilter: 'blur(16px) saturate(1.2)' }}
       >
         <div className="max-w-[1120px] mx-auto px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="text-[11px] text-text-secondary tracking-[0.1em] uppercase no-underline hover:text-accent transition-colors font-light flex items-center gap-2">
+          <Link to={guideCreator ? `/${guideCreator.handle}` : '/'}
+                className="text-[11px] text-text-secondary tracking-[0.1em] uppercase no-underline hover:text-accent transition-colors font-light flex items-center gap-2">
             <span>&larr;</span>
-            <span>All guides</span>
+            <span>{guideCreator ? `${guideCreator.display_name}’s guide` : 'All guides'}</span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="font-display text-[18px] text-text/60 leading-none">Insider Guide</span>

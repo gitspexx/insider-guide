@@ -33,6 +33,20 @@ const TIERS = [
     cta: 'Apply for free listing',
   },
   {
+    key: 'complete',
+    name: 'Complete',
+    price: '$50',
+    period: 'one-time',
+    description: 'Already in the guide? Turn your bare listing into one travelers stop on.',
+    features: [
+      'Full written profile & description',
+      'Photos on your card',
+      'Website + Instagram links',
+      '\u201cVerified owner\u201d badge',
+    ],
+    cta: 'Complete my listing',
+  },
+  {
     key: 'featured',
     name: 'Featured',
     price: '$200',
@@ -405,7 +419,7 @@ export default function Partner() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {TIERS.map((tier, index) => (
             <motion.div
               key={tier.key}

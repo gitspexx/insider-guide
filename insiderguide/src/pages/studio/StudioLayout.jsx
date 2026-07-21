@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 const TABS = [
   { to: '/studio', label: 'My Spots', end: true },
   { to: '/studio/import', label: 'Import' },
+  { to: '/studio/approvals', label: 'Approvals' },
   { to: '/studio/earnings', label: 'Earnings' },
   { to: '/studio/settings', label: 'Page Settings' },
 ]

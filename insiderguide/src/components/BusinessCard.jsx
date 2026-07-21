@@ -96,8 +96,25 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
           </div>
         )}
 
+        {/* Verified owner badge (Complete tier) */}
+        {business.tier === 'complete' && (
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="text-[10px] tracking-[0.12em] uppercase text-accent/70 border border-accent/25 px-2 py-0.5 rounded-full">
+              Verified owner
+            </span>
+          </div>
+        )}
+
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Claim hook — free-tier funnel entry for unclaimed listings */}
+        {!business.tier_paid && !creatorNote && (
+          <a href={`/claim?biz=${business.id}`}
+             className="text-[10px] tracking-[0.1em] uppercase text-text-dim/60 hover:text-accent transition-colors no-underline pt-3 self-start">
+            Own this place? Claim this listing
+          </a>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2 pt-4 border-t border-border">

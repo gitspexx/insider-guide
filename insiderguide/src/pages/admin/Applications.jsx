@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 // paid tiers get the invoice email (bank details + Stripe checkout link),
 // listed gets published + a welcome email. Slack is notified either way.
 
-const TIER_PRICES = { listed: 'free', featured: '$200', partner: '$500' }
+const TIER_PRICES = { listed: 'free', complete: '$50', featured: '$200', partner: '$500' }
 
 function parseApp(notes) {
   // Free-form applications say "Tier interest: X"; checkout pending rows say
@@ -112,6 +112,7 @@ export default function AdminApplications() {
             <select value={pick} onChange={(e) => setTierPick({ ...tierPick, [app.id]: e.target.value })}
                     className="bg-bg border border-border rounded-sm px-2 py-1.5 text-xs text-white">
               <option value="listed">listed (free)</option>
+              <option value="complete">complete ($50)</option>
               <option value="featured">featured ($200)</option>
               <option value="partner">partner ($500)</option>
             </select>

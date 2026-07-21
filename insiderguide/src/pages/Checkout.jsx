@@ -11,6 +11,13 @@ import Seo from '../components/Seo'
 // the Stripe Price's lookup_key. If/when bcax-charge supports
 // price_lookup_key resolution in elements mode, swap to that.
 const TIERS = {
+  complete: {
+    key: 'complete',
+    name: 'Complete',
+    amount_cents: 5000,
+    label: 'InsiderGuide Complete – $50',
+    description: 'Full profile: photos, description, website + Instagram links, verified-owner badge.',
+  },
   featured: {
     key: 'featured',
     name: 'Featured',

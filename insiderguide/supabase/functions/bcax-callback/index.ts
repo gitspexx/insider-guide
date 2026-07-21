@@ -40,9 +40,10 @@ const json = (body: unknown, status = 200) =>
   });
 
 // Lookup-key → IG tier slug.
-const LOOKUP_TO_TIER: Record<string, "featured" | "partner"> = {
+const LOOKUP_TO_TIER: Record<string, "featured" | "partner" | "complete"> = {
   insiderguide_featured: "featured",
   insiderguide_partner: "partner",
+  insiderguide_complete: "complete",
 };
 
 interface CallbackBody {
@@ -221,7 +222,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Payment Slack ping (best effort — never fail the webhook over it).
-  const amount = targetTier === "partner" ? "$500" : "$200";
+  const amount = targetTier === "partner" ? "$500" : targetTier === "featured" ? "$200" : "$50";
   await slackPing(isPlaceholder
     ? `:moneybag: PAID — *${existing.name}* (${existing.email || "no email"}) paid ${amount} for *${targetTier}*. Placeholder row: complete the listing details in /admin and publish.`
     : `:moneybag: PAID — *${existing.name}* paid ${amount} for *${targetTier}* — now live.`);

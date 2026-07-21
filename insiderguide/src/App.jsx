@@ -13,6 +13,7 @@ import Partner from './pages/Partner'
 // public visitor ever loads. Splitting them keeps the public bundle small.
 const Checkout = lazy(() => import('./pages/Checkout'))
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'))
+const Claim = lazy(() => import('./pages/Claim'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminCountry = lazy(() => import('./pages/admin/Country'))
@@ -35,6 +36,7 @@ const MySpots = lazy(() => import('./pages/studio/MySpots'))
 const StudioImport = lazy(() => import('./pages/studio/Import'))
 const StudioEarnings = lazy(() => import('./pages/studio/Earnings'))
 const StudioSettings = lazy(() => import('./pages/studio/Settings'))
+const StudioApprovals = lazy(() => import('./pages/studio/Approvals'))
 
 function RouteFallback() {
   return (
@@ -55,6 +57,7 @@ export default function App() {
           <Route path="/for-business" element={<Partner />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/claim" element={<Claim />} />
           {/* Creator pages have no dedicated route: RR7 cannot param-match a
               fused "@" prefix (`/@:handle` compiles to a literal). They
               dispatch through the /:slug catch-all — CountryGuide renders
@@ -63,9 +66,14 @@ export default function App() {
           <Route path="/studio" element={<CreatorRoute><StudioLayout /></CreatorRoute>}>
             <Route index element={<MySpots />} />
             <Route path="import" element={<StudioImport />} />
+            <Route path="approvals" element={<StudioApprovals />} />
             <Route path="earnings" element={<StudioEarnings />} />
             <Route path="settings" element={<StudioSettings />} />
           </Route>
+          {/* V3: guides are creator-scoped — /<creator>/<country>. Bare
+              /<country> URLs redirect to the covering creator's guide
+              (handled inside CountryGuide). */}
+          <Route path="/:slug/:country" element={<CountryGuide />} />
           <Route path="/:slug" element={<CountryGuide />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

@@ -29,6 +29,11 @@ const SITE = 'https://insiderguide.co'
 const SENDER_EMAIL = 'onboarding@insiderguide.co'
 
 const TIER_OFFER: Record<string, { label: string; amountUsd: number; desc: string }> = {
+  complete: {
+    label: 'Complete',
+    amountUsd: 50,
+    desc: 'Full profile: photos, description, website + Instagram links, “Verified owner” badge — the listing travelers actually stop on.',
+  },
   featured: {
     label: 'Featured',
     amountUsd: 200,
@@ -126,28 +131,63 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization') ?? ''
     const asCaller = createClient(url, anon, { global: { headers: { Authorization: authHeader } } })
     const { data: isAdmin } = await asCaller.rpc('is_admin')
-    if (!isAdmin) return json({ error: 'forbidden' }, 403)
+    const { data: { user: caller } } = await asCaller.auth.getUser()
+    if (!isAdmin && !caller) return json({ error: 'forbidden' }, 403)
 
-    const { business_id, action, tier } = await req.json()
-    if (!business_id || !['approve', 'reject'].includes(action)) throw new Error('bad args')
+    const { business_id, claim_id, action, tier } = await req.json()
+    if (!['approve', 'reject', 'approve_claim', 'reject_claim'].includes(action)) throw new Error('bad args')
     const admin = createClient(url, service)
+
+    // Resolve target business (claim actions resolve through the claim row).
+    let claimRow: { id: string; business_id: string; email: string; contact_name: string } | null = null
+    let targetBizId = business_id
+    if (action === 'approve_claim' || action === 'reject_claim') {
+      if (!claim_id) throw new Error('claim_id required')
+      const { data: cr } = await admin.from('claim_requests')
+        .select('id, business_id, email, contact_name, status').eq('id', claim_id).single()
+      if (!cr) throw new Error('claim not found')
+      if (cr.status !== 'pending') throw new Error('claim already handled')
+      claimRow = cr
+      targetBizId = cr.business_id
+    }
+    if (!targetBizId) throw new Error('business_id required')
 
     const { data: biz, error: bizErr } = await admin
       .from('businesses')
-      .select('id, name, email, notes, tier, published, countries(name, slug)')
-      .eq('id', business_id).single()
+      .select('id, name, email, notes, tier, description, published, country_id, countries(name, slug, creator_id)')
+      .eq('id', targetBizId).single()
     if (bizErr || !biz) throw new Error('business not found')
+
+    // Authorization: platform admin, OR the creator who covers this country
+    // (V3 model — approvals live in the covering creator's studio).
+    const coveringCreator = (biz as any).countries?.creator_id || null
+    if (!isAdmin && caller?.id !== coveringCreator) {
+      return json({ error: 'forbidden — not your country' }, 403)
+    }
+
+    // The applicant's pitch lives in internal notes; surface it as the public
+    // description on approval so listings never publish bare.
+    const pitchFromNotes = (biz.notes || '')
+      .replace(/\[[^\]]*\]/g, '')
+      .replace(/Tier inte(?:rest|nt): \w+\.( Prefers a quick call\.)?/, '')
+      .trim()
 
     if (action === 'reject') {
       await admin.from('businesses')
         .update({ notes: `${biz.notes || ''} [application-rejected]`.trim() })
-        .eq('id', business_id)
+        .eq('id', targetBizId)
       return json({ ok: true, rejected: true })
     }
 
-    // ── approve ──
-    const effectiveTier = ['listed', 'featured', 'partner'].includes(tier) ? tier : 'listed'
-    if (!biz.email) throw new Error('applicant has no email')
+    if (action === 'reject_claim') {
+      await admin.from('claim_requests').update({ status: 'rejected' }).eq('id', claim_id)
+      return json({ ok: true, rejected: true })
+    }
+
+    // ── approve / approve_claim ──
+    const effectiveTier = ['listed', 'complete', 'featured', 'partner'].includes(tier) ? tier : 'listed'
+    const recipientEmail = action === 'approve_claim' ? claimRow!.email : biz.email
+    if (!recipientEmail) throw new Error('no recipient email')
 
     // SMTP creds — same lookup the CRM send-email fn uses.
     const { data: account } = await admin.from('email_accounts')
@@ -168,6 +208,51 @@ Deno.serve(async (req) => {
       secure: (account.smtp_port || 465) === 465,
       auth: { user: account.smtp_user || account.email, pass: smtpPass },
     })
+
+    // ── approve_claim: mark claimed + send the Complete ($50) upsell ──
+    if (action === 'approve_claim') {
+      const offer = TIER_OFFER.complete
+      const checkoutUrl = `${SITE}/checkout?tier=complete&biz=${targetBizId}`
+      await transporter.sendMail({
+        from: `"${account.from_name || 'Insider Guide'}" <${account.email}>`,
+        to: recipientEmail,
+        subject: `${biz.name} is yours on Insider Guide — make it stand out`,
+        html: `<!doctype html><html><body style="margin:0;padding:0;background:#f4f2ec;">
+<div style="max-width:600px;margin:0 auto;padding:32px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="background:#ffffff;padding:28px 32px;border-radius:14px;">
+    <div style="color:#C8A55A;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:10px;">Insider Guide</div>
+    <p style="color:#2b2822;font-size:14px;line-height:1.7;margin:0 0 18px;">
+      Your claim for <strong>${biz.name}</strong> is confirmed — the listing is yours.<br/><br/>
+      Right now it shows only the basics, and travelers scroll past bare listings
+      to the complete ones. The <strong>Complete</strong> upgrade (USD $${offer.amountUsd},
+      one-time) adds ${offer.desc}
+    </p>
+    <a href="${checkoutUrl}"
+       style="display:block;background:#C8A55A;color:#0B0A08;text-decoration:none;text-align:center;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">
+      Complete my listing — $${offer.amountUsd}
+    </a>
+    <p style="color:#8a8577;font-size:11px;line-height:1.6;margin:14px 0 0;">
+      Prefer a bank transfer or have questions? Just reply to this email.
+    </p>
+  </div>
+</div></body></html>`,
+      })
+      await admin.from('claim_requests').update({ status: 'approved' }).eq('id', claim_id)
+      await admin.from('businesses').update({
+        email: biz.email || claimRow!.email,
+        notes: `${biz.notes || ''} [claimed-by ${claimRow!.email}]`.trim(),
+      }).eq('id', targetBizId)
+      const botToken = Deno.env.get('SLACK_BOT_TOKEN') || ''
+      const channel = Deno.env.get('INSIDER_GUIDE_APPLICATIONS_CHANNEL') || ''
+      if (botToken && channel) {
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${botToken}` },
+          body: JSON.stringify({ channel, text: `:white_check_mark: Claim approved — *${biz.name}* claimed by ${claimRow!.email}; Complete ($50) upsell sent.` }),
+        }).catch(() => {})
+      }
+      return json({ ok: true, claim: 'approved' })
+    }
 
     let invoiceNo: string | null = null
     let subject: string
@@ -191,10 +276,10 @@ Deno.serve(async (req) => {
         invoiceNo = nextNo as string
         const { error: markErr } = await admin.from('businesses')
           .update({ notes: `${biz.notes || ''} [invoice ${invoiceNo}]`.trim() })
-          .eq('id', business_id)
+          .eq('id', targetBizId)
         if (markErr) throw new Error(`could not reserve invoice number: ${markErr.message}`)
       }
-      const checkoutUrl = `${SITE}/checkout?tier=${effectiveTier}&biz=${business_id}`
+      const checkoutUrl = `${SITE}/checkout?tier=${effectiveTier}&biz=${targetBizId}`
       subject = `Invoice ${invoiceNo} — ${offer.label} placement for ${biz.name}`
       html = invoiceHtml({
         invoiceNo,
@@ -212,29 +297,36 @@ Deno.serve(async (req) => {
     // when the applicant never got the email.)
     await transporter.sendMail({
       from: `"${account.from_name || 'Insider Guide'}" <${account.email}>`,
-      to: biz.email,
+      to: recipientEmail,
       subject,
       html,
     })
 
     if (effectiveTier === 'listed') {
       await admin.from('businesses')
-        .update({ published: true, notes: `${biz.notes || ''} [application-approved listed]`.trim() })
-        .eq('id', business_id)
+        .update({
+          published: true,
+          // surface the applicant's pitch as the public description so free
+          // listings never publish bare
+          ...(biz.description ? {} : pitchFromNotes ? { description: pitchFromNotes } : {}),
+          notes: `${biz.notes || ''} [application-approved listed]`.trim(),
+        })
+        .eq('id', targetBizId)
     } else {
       // Invoice marker was already reserved above — re-read notes so we don't
       // clobber it, then finalize with the approved marker.
       const { data: fresh } = await admin.from('businesses')
-        .select('notes').eq('id', business_id).single()
+        .select('notes').eq('id', targetBizId).single()
       const notesNow = fresh?.notes || biz.notes || ''
       await admin.from('businesses')
         .update({
           outreach_status: 'invoiced',
+          ...(biz.description ? {} : pitchFromNotes ? { description: pitchFromNotes } : {}),
           notes: /\[application-approved /.test(notesNow)
             ? notesNow
             : `${notesNow} [application-approved ${effectiveTier}]`.trim(),
         })
-        .eq('id', business_id)
+        .eq('id', targetBizId)
     }
 
     // Slack heads-up (best effort)
