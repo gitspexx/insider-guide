@@ -195,7 +195,12 @@ export default function Partner() {
     const notesPrefix = `[partner-signup] Tier interest: ${tierInterest}.${callFlag}`
     const extraNotes = form.notes.trim() ? ` ${form.notes.trim()}` : ''
 
+    // Client-generated id: applicants can INSERT (shape-checked policy) but
+    // cannot SELECT unpublished rows, so `.select('id')` after insert would
+    // fail RLS on the RETURNING step. Supplying the uuid avoids reading back.
+    const newId = crypto.randomUUID()
     const payload = {
+      id: newId,
       name: form.name.trim(),
       country_id: form.country_id,
       city: form.city.trim(),
@@ -209,11 +214,9 @@ export default function Partner() {
       notes: `${notesPrefix}${extraNotes}`,
     }
 
-    const { data: inserted, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('businesses')
       .insert(payload)
-      .select('id')
-      .single()
     setSubmitting(false)
 
     if (insertError) {
@@ -221,6 +224,7 @@ export default function Partner() {
       return
     }
     setSubmitted(true)
+    const inserted = { id: newId }
 
     // Fire-and-forget notification — don't block the UI on it
     if (inserted?.id) {

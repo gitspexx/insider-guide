@@ -117,7 +117,12 @@ export default function Checkout() {
         throw new Error('No countries available to seed pending row')
       }
 
+      // Client-generated id: the applicant role can INSERT but cannot SELECT
+      // the unpublished row back, so `.select('id')` would fail RLS on the
+      // RETURNING step. Supplying the uuid avoids reading back.
+      const newId = crypto.randomUUID()
       const payload = {
+        id: newId,
         name: placeholderName,
         country_id: anyCountry.id,
         email: trimmed,
@@ -128,16 +133,14 @@ export default function Checkout() {
         notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}. Awaiting Stripe confirmation.${creatorRef ? ` [ref ${creatorRef}]` : ''}`,
       }
 
-      const { data: inserted, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('businesses')
         .insert(payload)
-        .select('id')
-        .single()
 
-      if (insertError || !inserted?.id) {
-        throw new Error(insertError?.message ?? 'Failed to create pending row')
+      if (insertError) {
+        throw new Error(insertError.message ?? 'Failed to create pending row')
       }
-      setPendingBusinessId(inserted.id)
+      setPendingBusinessId(newId)
       setEmailConfirmed(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
