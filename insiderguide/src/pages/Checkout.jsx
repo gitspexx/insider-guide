@@ -79,6 +79,16 @@ function FindYourBusiness({ creatorRef }) {
   const goPay = (bizId) =>
     navigate(`/checkout?tier=${tierPick}&biz=${bizId}${refQ}`)
 
+  // No-match path: carry the typed name + country into checkout so the
+  // pending row is pre-labeled and the team can match it by hand.
+  const goUnmatched = () => {
+    const qp = new URLSearchParams({ tier: tierPick })
+    if (name.trim()) qp.set('bizname', name.trim())
+    if (countryId) qp.set('bizcountry', countryId)
+    if (creatorRef) qp.set('ref', creatorRef)
+    navigate(`/checkout?${qp.toString()}`)
+  }
+
   const inputClass = 'w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-[14px] text-text placeholder:text-text-dim/60 focus:border-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 transition-all'
 
   return (
@@ -165,18 +175,36 @@ function FindYourBusiness({ creatorRef }) {
                 )}
               </div>
             ))}
+            <button
+              onClick={goUnmatched}
+              className="text-[12px] text-text-dim hover:text-accent transition-colors cursor-pointer self-start mt-1 underline-offset-2 hover:underline"
+            >
+              None of these? Continue anyway — we&rsquo;ll match it for you.
+            </button>
           </div>
         )}
         {results !== null && results.length === 0 && (
-          <p className="text-[13px] text-text-secondary mb-4">
-            No match for &ldquo;{name.trim()}&rdquo; in that country. Try a shorter name, or{' '}
-            <Link to="/partner" className="text-accent">apply to be added</Link>.
-          </p>
+          <div className="border border-accent/25 rounded-xl p-5 bg-bg-card mb-4">
+            <p className="text-sm text-text mb-1.5">Your business isn&rsquo;t there? Don&rsquo;t worry.</p>
+            <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
+              Continue to payment and our team will match the upgrade to your business —
+              or add it fresh — within one business day. You&rsquo;ll get a confirmation by email.
+            </p>
+            <button
+              onClick={goUnmatched}
+              className="bg-accent text-bg text-[12px] tracking-[0.1em] uppercase font-medium px-6 py-3 rounded-xl hover:bg-accent/85 transition-all cursor-pointer"
+            >
+              Continue — we&rsquo;ll match it for you
+            </button>
+            <p className="text-[11px] text-text-dim mt-3">
+              Or try a shorter name, or <Link to="/partner" className="text-accent">apply on the partner page</Link>.
+            </p>
+          </div>
         )}
 
         <p className="text-[11px] text-text-dim leading-relaxed">
           Not listed yet? <Link to="/partner" className="text-accent">Apply on the partner page</Link> —
-          or <button onClick={() => navigate(`/checkout?tier=${tierPick}${refQ}`)} className="text-accent cursor-pointer underline-offset-2 hover:underline">continue without a listing</button> and we&rsquo;ll match your payment by email.
+          or <button onClick={goUnmatched} className="text-accent cursor-pointer underline-offset-2 hover:underline">continue without a listing</button> and we&rsquo;ll match your payment by email.
         </p>
       </div>
     </div>
@@ -200,6 +228,16 @@ export default function Checkout() {
   const invoiceBizId =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bizParam)
       ? bizParam
+      : null
+
+  // "We'll match it for you" path (finder found no listing): the typed
+  // business name + country ride along so the pending row is pre-labeled
+  // and admin can match/create the listing after payment.
+  const unmatchedName = (params.get('bizname') || '').trim().slice(0, 120)
+  const unmatchedCountryParam = params.get('bizcountry') || ''
+  const unmatchedCountryId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(unmatchedCountryParam)
+      ? unmatchedCountryParam
       : null
 
   const [email, setEmail] = useState('')
@@ -251,28 +289,33 @@ export default function Checkout() {
     // If this fails (RLS/network), surface to user — DO NOT proceed to payment.
     setCreatingPending(true)
     try {
-      // Derive a placeholder name from the email's local part so admin can
-      // recognize the row at-a-glance before the applicant fills in details.
+      // Placeholder name: prefer the business name typed in the finder (the
+      // "we'll match it for you" path), else derive from the email's local
+      // part so admin can recognize the row at-a-glance.
       const emailLocal = trimmed.split('@')[0]
       const emailDomain = trimmed.split('@')[1] ?? ''
-      const placeholderName = emailLocal
-        ? `${emailLocal} (pending ${tier.name})`
-        : `Pending ${tier.name} application`
+      const placeholderName = unmatchedName
+        ? `${unmatchedName} (pending ${tier.name})`
+        : emailLocal
+          ? `${emailLocal} (pending ${tier.name})`
+          : `Pending ${tier.name} application`
 
-      // country_id is NOT NULL on businesses — but we don't collect it here
-      // (the upstream Partner page form does, this Checkout page is the
-      // pure-payment entrypoint). Pick the first published country as a
-      // placeholder; admin re-assigns on review. Nullable by design? No —
-      // schema requires it, so we MUST seed something.
-      const { data: anyCountry, error: cErr } = await supabase
-        .from('countries')
-        .select('id')
-        .eq('published', true)
-        .order('name')
-        .limit(1)
-        .maybeSingle()
-      if (cErr || !anyCountry?.id) {
-        throw new Error('No countries available to seed pending row')
+      // country_id is NOT NULL on businesses. The finder path passes the real
+      // country; otherwise seed the first published one (admin re-assigns on
+      // review — schema requires something).
+      let seedCountryId = unmatchedCountryId
+      if (!seedCountryId) {
+        const { data: anyCountry, error: cErr } = await supabase
+          .from('countries')
+          .select('id')
+          .eq('published', true)
+          .order('name')
+          .limit(1)
+          .maybeSingle()
+        if (cErr || !anyCountry?.id) {
+          throw new Error('No countries available to seed pending row')
+        }
+        seedCountryId = anyCountry.id
       }
 
       // Client-generated id: the applicant role can INSERT but cannot SELECT
@@ -282,13 +325,13 @@ export default function Checkout() {
       const payload = {
         id: newId,
         name: placeholderName,
-        country_id: anyCountry.id,
+        country_id: seedCountryId,
         email: trimmed,
         tier: 'listed',
         published: false,
         outreach_status: 'to_contact',
-        paid_pending_tier: tier.key, // 'featured' | 'partner'
-        notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}. Awaiting Stripe confirmation.${creatorRef ? ` [ref ${creatorRef}]` : ''}`,
+        paid_pending_tier: tier.key,
+        notes: `[partner-signup-paid] Tier intent: ${tier.key}. Email: ${trimmed}. Domain: ${emailDomain}.${unmatchedName ? ` Business: ${unmatchedName}. Needs manual match.` : ''} Awaiting Stripe confirmation.${creatorRef ? ` [ref ${creatorRef}]` : ''}`,
       }
 
       const { error: insertError } = await supabase
