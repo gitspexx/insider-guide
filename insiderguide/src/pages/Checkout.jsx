@@ -62,8 +62,10 @@ function FindYourBusiness({ creatorRef }) {
     const q = name.trim().replace(/[%_]/g, ' ').trim()
     if (q.length < 2 || !countryId || searching) return
     setSearching(true)
+    // claimable_businesses: all real (published) rows incl. scraped listings
+    // hidden from the curated guides — owners can still find + upgrade them.
     const { data } = await supabase
-      .from('public_businesses')
+      .from('claimable_businesses')
       .select('id, name, city, category, tier_paid')
       .eq('country_id', countryId)
       .ilike('name', `%${q}%`)

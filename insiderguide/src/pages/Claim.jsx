@@ -22,9 +22,12 @@ export default function Claim() {
     let cancelled = false
     async function load() {
       if (!bizId) { setBiz(null); return }
+      // claimable_businesses = every real (published) row, whether or not it
+      // made the curated guide — outreach targets scraped listings that are
+      // intentionally NOT shown on guides until they pay.
       const { data } = await supabase
-        .from('public_businesses')
-        .select('id, name, city, category, website')
+        .from('claimable_businesses')
+        .select('id, name, city, category')
         .eq('id', bizId)
         .maybeSingle()
       if (!cancelled) setBiz(data || null)

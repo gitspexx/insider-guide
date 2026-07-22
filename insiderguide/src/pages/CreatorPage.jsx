@@ -29,7 +29,8 @@ export default function CreatorPage({ handle: handleProp }) {
   const [showMap, setShowMap] = useState(false)
   // Country-guides catalog (founding creator only, gated by show_country_catalog)
   const [catalogCountries, setCatalogCountries] = useState([])
-  const [catalogCounts, setCatalogCounts] = useState({})
+  const [catalogCounts, setCatalogCounts] = useState({})      // full inventory (locked/DM funnel)
+  const [curatedCounts, setCuratedCounts] = useState({})      // what open guides actually show
   const [paywallCountry, setPaywallCountry] = useState(null)
 
   useEffect(() => {
@@ -89,8 +90,13 @@ export default function CreatorPage({ handle: handleProp }) {
       const { data: counts } = await supabase.rpc('country_business_counts')
       if (cancelled) return
       const map = {}
-      for (const row of counts || []) map[row.country_id] = Number(row.total) || 0
+      const curated = {}
+      for (const row of counts || []) {
+        map[row.country_id] = Number(row.total) || 0
+        curated[row.country_id] = Number(row.curated) || 0
+      }
       setCatalogCounts(map)
+      setCuratedCounts(curated)
     }
     loadCatalog()
     return () => { cancelled = true }
@@ -274,7 +280,7 @@ export default function CreatorPage({ handle: handleProp }) {
                     key={country.id}
                     country={country}
                     linkPrefix={`/${creator.handle}`}
-                    count={catalogCounts[country.id] || 0}
+                    count={curatedCounts[country.id] || 0}
                     locked={false}
                     index={index}
                   />
