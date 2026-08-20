@@ -1,9 +1,31 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import ProgressMetricCard from '../../components/ui/progress-metric-card'
+
+// Bucket businesses by their created_at day → a continuous {value, date} series
+// over the trailing `days` window (0 for days with no new listings).
+function bucketListingsByDay(rows, days = 30) {
+  const counts = new Map()
+  for (const r of rows) {
+    const t = new Date(r.created_at).getTime()
+    if (Number.isNaN(t)) continue
+    const key = new Date(t).toISOString().slice(0, 10) // YYYY-MM-DD (UTC)
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+  const anchor = new Date()
+  anchor.setUTCHours(0, 0, 0, 0)
+  const series = []
+  for (let i = days - 1; i >= 0; i--) {
+    const key = new Date(anchor.getTime() - i * 86400000).toISOString().slice(0, 10)
+    series.push({ date: key, value: counts.get(key) || 0 })
+  }
+  return series
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
+  const [trend, setTrend] = useState([])
   const [countries, setCountries] = useState([])
   const [recent, setRecent] = useState([])
   const [syncing, setSyncing] = useState(false)
@@ -27,6 +49,7 @@ export default function AdminDashboard() {
           countries: allCountries?.length || 0,
         })
         setRecent(allBiz.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10))
+        setTrend(bucketListingsByDay(allBiz))
       }
     }
     load()
@@ -169,6 +192,21 @@ export default function AdminDashboard() {
                 <span className="text-[9px] text-text-dim uppercase tracking-wider">{s.label}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Listings-added-per-day trend */}
+        {trend.length >= 2 && (
+          <div className="mb-8 max-w-2xl">
+            <ProgressMetricCard
+              title="Listings added"
+              accent="gold"
+              unit="listings"
+              series={[{ name: 'listings', data: trend }]}
+              dateFormatter={(d) =>
+                new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              }
+            />
           </div>
         )}
 

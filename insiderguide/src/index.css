@@ -47,6 +47,14 @@
   --color-text-primary: #EDE8DF;
   --font-heading: 'Inter', sans-serif;
   --font-serif: 'Cormorant Garamond', serif;
+
+  /* ─── shadcn aliases (ProgressMetricCard) → mapped onto dark-gold tokens ─── */
+  --color-card: var(--color-bg-card);              /* bg-card    → warm card surface */
+  --color-foreground: var(--color-text);           /* text-*     → warm cream text */
+  --color-muted-foreground: var(--color-text-dim); /* muted text → dimmed cream */
+  --color-muted: var(--color-bg-elevated);         /* bg-muted   → subtle raised surface */
+  --color-border-light: var(--color-border-hover); /* chart cursor / hairline */
+  /* border-border already resolves via the existing --color-border above */
 }
 
 /* ─── Base ─── */
