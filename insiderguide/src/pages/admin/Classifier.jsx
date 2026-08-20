@@ -34,6 +34,32 @@ export default function AdminClassifier() {
 
       if (data) {
         const classified = classifyMiscBusinesses(data)
+
+        // AI fallback: for businesses the keyword rules can't place confidently,
+        // ask the classify-business edge fn (bge-small centroids). Fail-safe —
+        // any error just leaves the keyword result untouched.
+        const weakIdx = classified
+          .map((c, i) => (!c.suggestion || c.suggestion.confidence < 0.4 ? i : -1))
+          .filter((i) => i >= 0)
+        if (weakIdx.length) {
+          try {
+            const { data: ai } = await supabase.functions.invoke('classify-business', {
+              body: { businesses: weakIdx.map((i) => classified[i].business) },
+            })
+            if (ai?.ok && Array.isArray(ai.results)) {
+              weakIdx.forEach((idx, k) => {
+                const r = ai.results[k]
+                const cur = classified[idx].suggestion
+                if (r?.category && r.confidence >= 0.62 && (!cur || r.confidence > cur.confidence)) {
+                  classified[idx].suggestion = { category: r.category, confidence: r.confidence, source: 'ai' }
+                }
+              })
+            }
+          } catch (err) {
+            console.warn('classify-business fallback failed', err)
+          }
+        }
+
         setResults(classified)
 
         // Auto-select high-confidence suggestions
