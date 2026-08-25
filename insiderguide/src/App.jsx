@@ -66,6 +66,7 @@ export default function App() {
               take a handle that the static route would shadow. Guarded by
               routes.test.js. */}
           <Route path="/creators" element={<CreatorApply />} />
+          <Route path="/creator" element={<CreatorApply />} />
           <Route path="/apply" element={<CreatorApply />} />
           {/* Creator pages have no dedicated route: RR7 cannot param-match a
               fused "@" prefix (`/@:handle` compiles to a literal). They
