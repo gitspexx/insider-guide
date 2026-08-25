@@ -17,19 +17,38 @@ async function fetchCreators() {
   return data || []
 }
 
+const APPLICATIONS_PAGE = 100
+
 // Inbound applications from the public /creators form. anon holds INSERT only,
 // so this admin list (is_admin() RLS) is the sole read surface for them.
-async function fetchApplications() {
+//
+// status is filtered SERVER-side and the count is exact. Filtering pending rows
+// out of a page the server already truncated meant any decided row newer than a
+// pending one pushed it out of the payload — past 200 decisions the oldest
+// genuine application was invisible and the queue rendered as empty. Now only
+// other pending rows can crowd the page, and `total` says when that happens.
+async function fetchApplications(limit = APPLICATIONS_PAGE) {
   const [appsRes, countriesRes] = await Promise.all([
     supabase.from('creator_applications')
-      .select('id, full_name, email, social_handle, country_id, city, list_url, pitch, status, created_at')
+      .select('id, full_name, email, social_handle, country_id, city, list_url, pitch, status, created_at',
+        { count: 'exact' })
+      .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(200),
+      .limit(limit),
     supabase.from('countries').select('id, name, flag_emoji'),
   ])
   const names = {}
   for (const c of countriesRes.data || []) names[c.id] = `${c.flag_emoji || ''} ${c.name}`.trim()
-  return { applications: appsRes.data || [], countryNames: names }
+  // A swallowed error here is indistinguishable from an empty queue, and the
+  // conclusion an admin draws from it — "nobody applied" — is the expensive one.
+  const failure = appsRes.error || countriesRes.error
+  if (failure) console.error('admin/Creators: applications fetch failed', failure)
+  return {
+    applications: appsRes.data || [],
+    total: appsRes.count ?? 0,
+    countryNames: names,
+    error: failure ? failure.message : null,
+  }
 }
 
 // The column check constraint already pins the scheme, but this list is the one
@@ -124,6 +143,9 @@ export default function AdminCreators() {
   const [dealForm, setDealForm] = useState({ business_id: '', tier: 'featured', amount_cents: 20000 })
   const [reqForm, setReqForm] = useState({ business_id: '', notes: '' })
   const [applications, setApplications] = useState([])
+  const [applicationsTotal, setApplicationsTotal] = useState(0)
+  const [applicationsLimit, setApplicationsLimit] = useState(APPLICATIONS_PAGE)
+  const [applicationsError, setApplicationsError] = useState(null)
   const [countryNames, setCountryNames] = useState({})
 
   useEffect(() => {
@@ -132,9 +154,11 @@ export default function AdminCreators() {
       const rows = await fetchCreators()
       if (cancelled) return
       setCreators(rows)
-      const apps = await fetchApplications()
+      const apps = await fetchApplications(APPLICATIONS_PAGE)
       if (cancelled) return
       setApplications(apps.applications)
+      setApplicationsTotal(apps.total)
+      setApplicationsError(apps.error)
       setCountryNames(apps.countryNames)
       const st = await fetchCreatorStats(rows)
       if (!cancelled) setStats(st)
@@ -142,6 +166,16 @@ export default function AdminCreators() {
     load()
     return () => { cancelled = true }
   }, [])
+
+  // Kept off the mount effect's dependencies on purpose: paging the queue must
+  // not re-run fetchCreatorStats, which is one head-count query per creator.
+  async function reloadApplications(limit = applicationsLimit) {
+    setApplicationsLimit(limit)
+    const apps = await fetchApplications(limit)
+    setApplications(apps.applications)
+    setApplicationsTotal(apps.total)
+    setApplicationsError(apps.error)
+  }
 
   async function reload() {
     const rows = await fetchCreators()
@@ -165,7 +199,19 @@ export default function AdminCreators() {
     const { error } = await supabase.from('creator_applications').update({ status }).eq('id', id)
     setBusy(false)
     if (error) { setMsg(`Error: ${error.message}`); return }
-    setApplications((await fetchApplications()).applications)
+    reloadApplications()
+  }
+
+  // Spam that clears the one-row-per-request and dedupe triggers still lands in
+  // this queue, and rejecting it leaves it on file forever. DELETE is granted to
+  // authenticated and gated to admins by admin_all_creator_applications.
+  async function deleteApplication(id, who) {
+    if (!confirm(`Delete the application from ${who}? This cannot be undone.`)) return
+    setBusy(true); setMsg(null)
+    const { error } = await supabase.from('creator_applications').delete().eq('id', id)
+    setBusy(false)
+    if (error) { setMsg(`Error: ${error.message}`); return }
+    reloadApplications()
   }
 
   function prefillInvite(app) {
@@ -223,8 +269,6 @@ export default function AdminCreators() {
     }
   }
 
-  const pendingApplications = applications.filter((a) => a.status === 'pending')
-
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <h1 className="font-heading text-xl text-white mb-6">Creators</h1>
@@ -245,13 +289,25 @@ export default function AdminCreators() {
       </form>
       {msg && <p className="text-xs text-gold mb-4">{msg}</p>}
 
-      {pendingApplications.length > 0 && (
+      {applicationsError && (
+        <div className="mb-8 bg-red-400/5 border border-red-400/30 rounded-xl px-4 py-3">
+          <span className="text-[10px] uppercase tracking-wider text-red-400/70 block mb-1">
+            Creator applications could not be loaded
+          </span>
+          <p className="text-xs text-text-secondary">
+            {applicationsError} — this list is empty because the read failed, not because nobody applied.
+          </p>
+        </div>
+      )}
+
+      {applications.length > 0 && (
         <div className="mb-8">
           <span className="text-[10px] uppercase tracking-wider text-text-dim block mb-2">
-            Creator applications ({pendingApplications.length} pending)
+            Creator applications ({applicationsTotal} pending
+            {applications.length < applicationsTotal ? `, showing ${applications.length}` : ''})
           </span>
           <div className="flex flex-col gap-2">
-            {pendingApplications.map((a) => (
+            {applications.map((a) => (
               <div key={a.id} className="bg-bg-card border border-border rounded-xl px-4 py-3 flex flex-col gap-2">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-sm text-white">{a.full_name}</span>
@@ -280,10 +336,20 @@ export default function AdminCreators() {
                           className="text-xs uppercase tracking-wider text-red-400/70 border border-border px-3 py-1.5 rounded-lg hover:text-red-400 cursor-pointer disabled:opacity-50">
                     Reject
                   </button>
+                  <button onClick={() => deleteApplication(a.id, a.email)} disabled={busy}
+                          className="text-xs uppercase tracking-wider text-text-dim border border-border px-3 py-1.5 rounded-lg hover:text-red-400 cursor-pointer disabled:opacity-50">
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+          {applications.length < applicationsTotal && (
+            <button onClick={() => reloadApplications(applicationsLimit + APPLICATIONS_PAGE)} disabled={busy}
+                    className="mt-2 text-xs uppercase tracking-wider text-gold border border-gold/30 px-3 py-1.5 rounded-lg hover:bg-gold/10 cursor-pointer disabled:opacity-50">
+              Load {Math.min(APPLICATIONS_PAGE, applicationsTotal - applications.length)} more
+            </button>
+          )}
         </div>
       )}
 

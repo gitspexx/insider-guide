@@ -51,7 +51,11 @@ insiderguide/src/
 1. **Env vars passed as Docker build args.** Never hardcode Supabase keys.
 2. **Admin routes protected** by AdminRoute component.
 3. **Public pages must be fast.** No unnecessary client-side fetches on initial load.
-4. **Check Obsidian vault** for Supabase keys and VPS credentials.
+4. **Backend ships before `main`.** `.github/workflows/deploy.yml` auto-deploys the
+   frontend on push to main and applies no migrations, deploys no edge functions.
+   Run `supabase db push` + `supabase functions deploy` first. `npm run preflight`
+   fails the build when they're missing — see `insiderguide/docs/deploy-runbook.md`.
+5. **Check Obsidian vault** for Supabase keys and VPS credentials.
 
 ## Brand Voice — Insider Guide
 Professional, warm, travel-industry savvy. Position as a curated platform, not a review site. Outreach to hotels/restaurants/tours: brief intro of platform, what's in it for them (exposure to travelers), clear CTA to join. Personalization mandatory — reference something specific about recipient.

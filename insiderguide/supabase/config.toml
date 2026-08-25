@@ -6,6 +6,13 @@ verify_jwt = true
 [functions.enrich-places]
 verify_jwt = false   # called by pg_cron with x-enrich-secret header
 
+[functions.notify-creator-application]
+verify_jwt = true    # called from /creators with the publishable anon key as the
+                     # bearer, exactly as /partner calls notify-partner-application
+                     # (which is deployed verify_jwt=true and works). The gateway
+                     # check is not the access control here — the fn reads the row
+                     # itself and returns a flat { ok: true } either way.
+
 [functions.bcax-callback]
 verify_jwt = false   # BCAX payment webhook authenticates via X-BCAX-Callback-Key,
                      # not a JWT. verify_jwt=true 401s the dispatcher at the

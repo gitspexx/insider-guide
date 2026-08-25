@@ -102,8 +102,10 @@ function validate(form) {
 }
 
 // PostgREST passes the Postgres SQLSTATE through. Translate the codes this form
-// can realistically trip; anything else keeps the server's own wording rather
-// than hiding it behind "something went wrong".
+// can realistically trip. The default branch never interpolates err.message:
+// that string is written for us, not for the visitor, and carries schema names
+// straight to an anonymous page. The raw error goes to the console instead, so
+// a developer reading a session recording or a bug report still has it.
 function describeInsertError(err) {
   switch (err?.code) {
     case '23514':
@@ -112,9 +114,32 @@ function describeInsertError(err) {
       return 'That country isn’t selectable any more. Choose another one and submit again.'
     case '42501':
       return 'The server refused the submission. That’s on our side, not yours — email lead@insiderguide.co and we’ll enter it by hand.'
+    // Table absent from PostgREST's schema cache: the migration behind this
+    // form has not been applied. Retrying cannot fix it, so don't ask — hand
+    // the applicant an address that works today.
+    case 'PGRST205':
+    case '42P01':
+      return 'Applications aren’t reachable right now — this one is on us. Email what you were about to send to lead@insiderguide.co and we’ll pick it up from there.'
     default:
-      return `Your application didn’t save: ${err?.message || 'the server didn’t respond'}. Nothing was lost — press submit again, or send it to lead@insiderguide.co.`
+      return 'Your application didn’t save. Press submit again — if it fails twice, send it to lead@insiderguide.co and we’ll enter it by hand.'
   }
+}
+
+// Fire-and-forget, matching Partner.jsx and Claim.jsx. The address is the only
+// handle we have on the row: anon holds INSERT on seven columns and no SELECT,
+// so the page cannot read back what it just wrote, and the fn resolves the row
+// server-side from it. Never awaited — a notification outage must not turn a
+// stored application into a visible failure.
+function notifyApplication(email) {
+  fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-creator-application`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ email }),
+  }).catch((e) => console.warn('notify-creator-application failed:', e))
 }
 
 export default function CreatorApply() {
@@ -132,6 +157,7 @@ export default function CreatorApply() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const [countriesFailed, setCountriesFailed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -141,7 +167,17 @@ export default function CreatorApply() {
         supabase.from('deal_prices').select('tier, amount_cents'),
       ])
       if (cancelled) return
+      // Country is a required field with no free-text fallback, so a failed
+      // read is a dead-end form, not a cosmetic gap: the select renders empty
+      // and validate() blocks submit on a field nobody can fill. Say so, and
+      // give an address that doesn't depend on this query.
+      if (countryRes.error) {
+        console.error('CreatorApply: countries fetch failed', countryRes.error)
+        setCountriesFailed(true)
+      }
       setCountries(countryRes.data || [])
+      // deal_prices needs no such handling — PAYOUT_TIERS carries a fallback
+      // for every tier, so the section renders correct numbers regardless.
       const map = {}
       for (const row of priceRes.data || []) map[row.tier] = Number(row.amount_cents) || 0
       setPrices(map)
@@ -177,13 +213,12 @@ export default function CreatorApply() {
     setSubmitting(false)
 
     if (insertError) {
+      console.error('CreatorApply: insert failed', insertError)
       setError(describeInsertError(insertError))
       return
     }
     setSubmitted(true)
-    // No notify-* call: notify-partner-application is deployed but has no
-    // source in this repo, so its behaviour on a non-business payload is
-    // unknown. Reviewers pick these up from /admin/creators.
+    notifyApplication(form.email.trim().toLowerCase())
   }
 
   return (
@@ -451,7 +486,7 @@ export default function CreatorApply() {
                   We{'’'}ll read it properly.
                 </h2>
                 <p className="text-text-secondary text-[15px] leading-[1.65] mb-8">
-                  Every application is read by a person, and we open one country at a time. Expect a reply at <span className="text-text">{form.email}</span> within 5 business days.
+                  A confirmation is on its way to <span className="text-text">{form.email}</span>. Every application is read by a person, and we open one country at a time — expect a reply there within 5 business days.
                 </p>
                 <Link
                   to="/"
@@ -511,13 +546,19 @@ export default function CreatorApply() {
                       onChange={(e) => update('country_id', e.target.value)}
                       className={inputClass}
                     >
-                      <option value="">Select a country</option>
+                      <option value="">{countriesFailed ? 'Country list unavailable' : 'Select a country'}</option>
                       {countries.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.flag_emoji ? `${c.flag_emoji} ` : ''}{c.name}
                         </option>
                       ))}
                     </select>
+                    {countriesFailed && (
+                      <span className="block mt-1.5 text-[11px] text-red-400/80 font-light">
+                        We couldn&rsquo;t load the country list. Reload the page, or send your
+                        application to <a href="mailto:lead@insiderguide.co" className="text-accent">lead@insiderguide.co</a> instead.
+                      </span>
+                    )}
                   </Field>
 
                   <Field label="City or region">
