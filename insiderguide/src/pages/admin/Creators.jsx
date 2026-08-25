@@ -17,6 +17,27 @@ async function fetchCreators() {
   return data || []
 }
 
+// Inbound applications from the public /creators form. anon holds INSERT only,
+// so this admin list (is_admin() RLS) is the sole read surface for them.
+async function fetchApplications() {
+  const [appsRes, countriesRes] = await Promise.all([
+    supabase.from('creator_applications')
+      .select('id, full_name, email, social_handle, country_id, city, list_url, pitch, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200),
+    supabase.from('countries').select('id, name, flag_emoji'),
+  ])
+  const names = {}
+  for (const c of countriesRes.data || []) names[c.id] = `${c.flag_emoji || ''} ${c.name}`.trim()
+  return { applications: appsRes.data || [], countryNames: names }
+}
+
+// The column check constraint already pins the scheme, but this list is the one
+// place applicant-supplied text becomes an href — don't rely on a single lock.
+function safeUrl(url) {
+  return /^https?:\/\//i.test(url || '') ? url : null
+}
+
 // Per-creator overview numbers for the list rows. Few creators — cheap
 // head-count queries per creator beat fetching whole tables (PostgREST caps
 // un-limited selects at 1000 rows).
@@ -102,6 +123,8 @@ export default function AdminCreators() {
   const [panel, setPanel] = useState(null)          // { deals, saved, funnel, requests, imports }
   const [dealForm, setDealForm] = useState({ business_id: '', tier: 'featured', amount_cents: 20000 })
   const [reqForm, setReqForm] = useState({ business_id: '', notes: '' })
+  const [applications, setApplications] = useState([])
+  const [countryNames, setCountryNames] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -109,6 +132,10 @@ export default function AdminCreators() {
       const rows = await fetchCreators()
       if (cancelled) return
       setCreators(rows)
+      const apps = await fetchApplications()
+      if (cancelled) return
+      setApplications(apps.applications)
+      setCountryNames(apps.countryNames)
       const st = await fetchCreatorStats(rows)
       if (!cancelled) setStats(st)
     }
@@ -128,6 +155,22 @@ export default function AdminCreators() {
     setBusy(false)
     if (error || data?.error) { setMsg(`Error: ${error?.message || data.error}`); return false }
     return true
+  }
+
+  // status/reviewer_notes are the only granted columns; RLS gates the row to
+  // admins. Approving does NOT create the creator — the invite form below does,
+  // so a handle is still chosen by a human.
+  async function setApplicationStatus(id, status) {
+    setBusy(true); setMsg(null)
+    const { error } = await supabase.from('creator_applications').update({ status }).eq('id', id)
+    setBusy(false)
+    if (error) { setMsg(`Error: ${error.message}`); return }
+    setApplications((await fetchApplications()).applications)
+  }
+
+  function prefillInvite(app) {
+    setForm({ email: app.email, handle: '', display_name: app.full_name })
+    setMsg(`Loaded ${app.email} into the invite form above — pick a handle, then Invite.`)
   }
 
   async function handleInvite(e) {
@@ -180,6 +223,8 @@ export default function AdminCreators() {
     }
   }
 
+  const pendingApplications = applications.filter((a) => a.status === 'pending')
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <h1 className="font-heading text-xl text-white mb-6">Creators</h1>
@@ -199,6 +244,48 @@ export default function AdminCreators() {
         </button>
       </form>
       {msg && <p className="text-xs text-gold mb-4">{msg}</p>}
+
+      {pendingApplications.length > 0 && (
+        <div className="mb-8">
+          <span className="text-[10px] uppercase tracking-wider text-text-dim block mb-2">
+            Creator applications ({pendingApplications.length} pending)
+          </span>
+          <div className="flex flex-col gap-2">
+            {pendingApplications.map((a) => (
+              <div key={a.id} className="bg-bg-card border border-border rounded-xl px-4 py-3 flex flex-col gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-sm text-white">{a.full_name}</span>
+                  <span className="text-xs text-text-dim">{a.email}</span>
+                  <span className="text-xs text-gold">{a.social_handle}</span>
+                  <span className="text-[11px] text-text-dim">
+                    {countryNames[a.country_id] || '—'}{a.city ? ` · ${a.city}` : ''}
+                  </span>
+                  <span className="text-[11px] text-text-dim">{new Date(a.created_at).toLocaleDateString()}</span>
+                </div>
+                {a.pitch && <p className="text-xs text-text-secondary">{a.pitch}</p>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {safeUrl(a.list_url) && (
+                    <a href={safeUrl(a.list_url)} target="_blank" rel="noreferrer"
+                       className="text-[11px] text-gold hover:underline truncate max-w-xs">{a.list_url}</a>
+                  )}
+                  <button onClick={() => prefillInvite(a)}
+                          className="text-xs uppercase tracking-wider text-gold border border-gold/30 px-3 py-1.5 rounded-lg hover:bg-gold/10 cursor-pointer">
+                    Prefill invite
+                  </button>
+                  <button onClick={() => setApplicationStatus(a.id, 'approved')} disabled={busy}
+                          className="text-xs uppercase tracking-wider text-green-400 border border-green-400/30 px-3 py-1.5 rounded-lg hover:bg-green-400/10 cursor-pointer disabled:opacity-50">
+                    Mark approved
+                  </button>
+                  <button onClick={() => setApplicationStatus(a.id, 'rejected')} disabled={busy}
+                          className="text-xs uppercase tracking-wider text-red-400/70 border border-border px-3 py-1.5 rounded-lg hover:text-red-400 cursor-pointer disabled:opacity-50">
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         {creators.map((c) => (

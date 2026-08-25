@@ -14,6 +14,7 @@ import Partner from './pages/Partner'
 const Checkout = lazy(() => import('./pages/Checkout'))
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'))
 const Claim = lazy(() => import('./pages/Claim'))
+const CreatorApply = lazy(() => import('./pages/CreatorApply'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminCountry = lazy(() => import('./pages/admin/Country'))
@@ -58,6 +59,14 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
           <Route path="/claim" element={<Claim />} />
+          {/* /apply is an alias for /creators (canonical stays /creators). Both
+              outrank the /:slug catch-all below regardless of declaration
+              order — RR7 ranks branches by segment score, static 10 vs
+              dynamic 3 — and both are in reserved_handles so no creator can
+              take a handle that the static route would shadow. Guarded by
+              routes.test.js. */}
+          <Route path="/creators" element={<CreatorApply />} />
+          <Route path="/apply" element={<CreatorApply />} />
           {/* Creator pages have no dedicated route: RR7 cannot param-match a
               fused "@" prefix (`/@:handle` compiles to a literal). They
               dispatch through the /:slug catch-all — CountryGuide renders
