@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import { nucleoTrack } from '../lib/nucleo'
 
 /**
  * Soft email-capture popup for country guides.
@@ -67,6 +68,7 @@ export default function EmailCapturePopup({ countrySlug, source = 'web_popup', h
     } else {
       setStatus('success')
       setEmail('')
+      nucleoTrack('form_submitted', { form: 'email_capture_popup' })
     }
     setSubmitting(false)
     markSeen()

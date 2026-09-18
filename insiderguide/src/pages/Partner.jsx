@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { nucleoTrack } from '../lib/nucleo'
 import Seo from '../components/Seo'
 
 const CATEGORY_OPTIONS = [
@@ -228,6 +229,7 @@ export default function Partner() {
       return
     }
     setSubmitted(true)
+    nucleoTrack('form_submitted', { form: 'partner' })
     const inserted = { id: newId }
 
     // Fire-and-forget notification — don't block the UI on it
