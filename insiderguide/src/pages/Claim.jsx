@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { nucleoTrack } from '../lib/nucleo'
 import Seo from '../components/Seo'
 
 // Claim flow: an owner finds their (scraped/creator-imported) listing on a
@@ -50,6 +51,7 @@ export default function Claim() {
     setSubmitting(false)
     if (insErr) { setError(insErr.message); return }
     setSubmitted(true)
+    nucleoTrack('form_submitted', { form: 'claim' })
     // Best-effort notification (Slack + hello@ + auto-reply)
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-partner-application`, {
       method: 'POST',

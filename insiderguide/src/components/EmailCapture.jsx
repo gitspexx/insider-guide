@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import { nucleoTrack } from '../lib/nucleo'
 
 export default function EmailCapture({ countrySlug }) {
   const [email, setEmail] = useState('')
@@ -25,6 +26,7 @@ export default function EmailCapture({ countrySlug }) {
     } else {
       setStatus('success')
       setEmail('')
+      nucleoTrack('form_submitted', { form: 'email_capture' })
     }
     setSubmitting(false)
   }

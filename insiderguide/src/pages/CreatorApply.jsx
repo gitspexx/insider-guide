@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { nucleoTrack } from '../lib/nucleo'
 import Seo from '../components/Seo'
 
 // creator_deals.rev_share_pct default (creator_network_v2.sql) — the share is
@@ -218,6 +219,7 @@ export default function CreatorApply() {
       return
     }
     setSubmitted(true)
+    nucleoTrack('form_submitted', { form: 'creator_apply' })
     notifyApplication(form.email.trim().toLowerCase())
   }
 
