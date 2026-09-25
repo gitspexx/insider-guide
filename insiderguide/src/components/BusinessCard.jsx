@@ -14,8 +14,15 @@ const CATEGORY_STYLES = {
 const DEFAULT_STYLE = { color: 'text-text-dim', dot: 'bg-text-dim', glow: '' }
 
 export default function BusinessCard({ business, index = 0, isTopPick = false, creatorNote, creatorName = 'Alex', pinned = false }) {
-  const isPartner = business.tier === 'partner'
-  const isFeatured = business.tier === 'featured'
+  // Paid styling is gated on tier_paid, not on the tier string alone: the
+  // scraper imports carry tier='featured' wholesale on unpaid rows. Both views
+  // that feed this card (public_businesses, creator_saved_businesses) already
+  // downgrade an unpaid tier to 'listed' and expose tier_paid; checking it here
+  // too means a caller that ever passes a raw businesses row fails closed
+  // rather than handing out free Featured badges.
+  const isPaid = business.tier_paid === true
+  const isPartner = isPaid && business.tier === 'partner'
+  const isFeatured = isPaid && business.tier === 'featured'
   const cat = CATEGORY_STYLES[business.category] || DEFAULT_STYLE
 
   return (
@@ -87,7 +94,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
         )}
 
         {/* Recommended badge */}
-        {business.recommended_badge && (
+        {isPaid && business.recommended_badge && (
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
             <span className="text-[11px] text-accent tracking-[0.08em] uppercase font-light">
@@ -97,7 +104,7 @@ export default function BusinessCard({ business, index = 0, isTopPick = false, c
         )}
 
         {/* Verified owner badge (Complete tier) */}
-        {business.tier === 'complete' && (
+        {isPaid && business.tier === 'complete' && (
           <div className="inline-flex items-center gap-2 mb-3">
             <span className="text-[10px] tracking-[0.12em] uppercase text-accent/70 border border-accent/25 px-2 py-0.5 rounded-full">
               Verified owner
