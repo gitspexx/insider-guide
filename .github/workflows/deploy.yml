@@ -28,6 +28,34 @@ jobs:
             cd insiderguide
             docker compose build --no-cache
             docker compose up -d --remove-orphans --force-recreate --wait --wait-timeout 180
+      # index.html is now edge-cacheable (s-maxage=60 in nginx.conf), which is
+      # what takes a page view from a ~600ms round trip to Germany down to a
+      # ~90ms stop at the nearest Cloudflare edge. The tradeoff is that a fresh
+      # build could sit behind the previous shell, which points at a bundle hash
+      # the new image no longer contains, so purge the edge once the new
+      # container is serving. Skipped silently when the secret is absent — the
+      # 60s s-maxage means it self-heals, this just makes it immediate.
+      - name: Purge Cloudflare cache
+        if: success()
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+        run: |
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
+            echo "CF_API_TOKEN / CF_ZONE_ID not set - skipping purge."
+            echo "The edge clears itself within 60s (s-maxage)."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/purge.json -w '%{http_code}' -X POST \
+            "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"files":["https://insiderguide.co/","https://insiderguide.co/index.html","https://www.insiderguide.co/"]}')
+          cat /tmp/purge.json
+          if [ "$code" != "200" ]; then
+            echo "Purge returned HTTP $code - the edge still clears itself within 60s."
+          fi
+
       - name: Retry on failure
         if: failure()
         uses: appleboy/ssh-action@v1
