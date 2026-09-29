@@ -39,6 +39,7 @@ const ANON_KEY = env.VITE_SUPABASE_ANON_KEY
 const STATIC_ROUTES = [
   { path: '', priority: '1.0', changefreq: 'weekly' },
   { path: '/partner', priority: '0.7', changefreq: 'monthly' },
+  { path: '/book', priority: '0.5', changefreq: 'monthly' },
   // /apply renders the same page but canonicalises to /creators, so only the
   // canonical URL belongs in the sitemap.
   { path: '/creators', priority: '0.7', changefreq: 'monthly' },

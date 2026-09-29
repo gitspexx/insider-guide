@@ -22,6 +22,15 @@ describe('public route table', () => {
     expect(ROUTES.map((r) => r.path)).toEqual(expect.arrayContaining(['/creators', '/apply']))
   })
 
+  it('declares the book-a-call routes', () => {
+    expect(ROUTES.map((r) => r.path)).toEqual(expect.arrayContaining(['/book', '/call']))
+  })
+
+  it('resolves /book ahead of the /:slug catch-all', () => {
+    expect(matchedPath('/book')).toBe('/book')
+    expect(matchedPath('/call')).toBe('/call')
+  })
+
   it('resolves /creators and /apply ahead of the /:slug catch-all', () => {
     expect(matchedPath('/creators')).toBe('/creators')
     expect(matchedPath('/apply')).toBe('/apply')

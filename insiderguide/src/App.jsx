@@ -15,6 +15,7 @@ const Checkout = lazy(() => import('./pages/Checkout'))
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'))
 const Claim = lazy(() => import('./pages/Claim'))
 const CreatorApply = lazy(() => import('./pages/CreatorApply'))
+const Book = lazy(() => import('./pages/Book'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminCountry = lazy(() => import('./pages/admin/Country'))
@@ -68,6 +69,10 @@ export default function App() {
           <Route path="/creators" element={<CreatorApply />} />
           <Route path="/creator" element={<CreatorApply />} />
           <Route path="/apply" element={<CreatorApply />} />
+          {/* /book: ask-for-availability call request (outreach replies land
+              here instead of on the /partner application form). */}
+          <Route path="/book" element={<Book />} />
+          <Route path="/call" element={<Book />} />
           {/* Creator pages have no dedicated route: RR7 cannot param-match a
               fused "@" prefix (`/@:handle` compiles to a literal). They
               dispatch through the /:slug catch-all — CountryGuide renders

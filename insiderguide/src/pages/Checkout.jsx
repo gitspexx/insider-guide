@@ -52,7 +52,7 @@ const PROMOS = {
 // No-tier landing: pick a tier, then find your listing by name + country so
 // payment lands on YOUR row (not a fresh placeholder). Owners arrive here from
 // outreach emails that don't carry a ?biz= reference.
-function FindYourBusiness({ creatorRef }) {
+function FindYourBusiness({ creatorRef, promoCode }) {
   const navigate = useNavigate()
   const [countries, setCountries] = useState([])
   const [tierPick, setTierPick] = useState('complete')
@@ -90,9 +90,12 @@ function FindYourBusiness({ creatorRef }) {
     setSearching(false)
   }
 
+  // Outreach links arrive without a tier (`/checkout?promo=partner10`); the
+  // promo must survive the picker or the buyer lands on list price.
   const refQ = creatorRef ? `&ref=${creatorRef}` : ''
+  const promoQ = promoCode ? `&promo=${encodeURIComponent(promoCode)}` : ''
   const goPay = (bizId) =>
-    navigate(`/checkout?tier=${tierPick}&biz=${bizId}${refQ}`)
+    navigate(`/checkout?tier=${tierPick}&biz=${bizId}${refQ}${promoQ}`)
 
   // No-match path: carry the typed name + country into checkout so the
   // pending row is pre-labeled and the team can match it by hand.
@@ -101,6 +104,7 @@ function FindYourBusiness({ creatorRef }) {
     if (name.trim()) qp.set('bizname', name.trim())
     if (countryId) qp.set('bizcountry', countryId)
     if (creatorRef) qp.set('ref', creatorRef)
+    if (promoCode) qp.set('promo', promoCode)
     navigate(`/checkout?${qp.toString()}`)
   }
 
@@ -285,7 +289,7 @@ export default function Checkout() {
   // Missing tier param — outreach emails link straight here, so instead of a
   // dead-end we let the owner pick a tier and find their existing listing.
   if (!tier) {
-    return <FindYourBusiness creatorRef={creatorRef} />
+    return <FindYourBusiness creatorRef={creatorRef} promoCode={params.get('promo') || ''} />
   }
 
   const handleEmailSubmit = async (e) => {
