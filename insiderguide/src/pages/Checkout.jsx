@@ -5,11 +5,17 @@ import { CheckoutForm } from '../components/checkout/CheckoutForm'
 import { supabase } from '../lib/supabase'
 import Seo from '../components/Seo'
 
-// IG tier pricing — these MUST stay in sync with the BCAX Stripe Prices
-// (insiderguide_featured = $200, insiderguide_partner = $500). bcax-charge in
-// elements/one-time mode reads amount_cents from the request body, not from
-// the Stripe Price's lookup_key. If/when bcax-charge supports
-// price_lookup_key resolution in elements mode, swap to that.
+// IG tier pricing. These amounts are for DISPLAY: bcax-charge resolves the
+// Stripe Price from `price_lookup_key` and that wins — it logs
+// "amount_cents ignored — price_lookup_key wins" when both are sent
+// (bca-app supabase/functions/bcax-charge/index.ts, elements mode). The older
+// comment here claimed the opposite; it was wrong, and the discount below
+// depends on which is true, so it is worth being exact.
+//
+// PROMO: `?promo=partner10` swaps the lookup key for its `_10off` twin, which
+// is a separate Stripe Price on the same product (4500 / 18000 / 45000). It has
+// to be a Price and not a coupon, because this checkout is a raw PaymentIntent
+// and Stripe coupons never apply to those.
 const TIERS = {
   complete: {
     key: 'complete',
@@ -32,6 +38,15 @@ const TIERS = {
     label: 'InsiderGuide Partner – $500',
     description: 'Hero placement, newsletter logo, priority creator access.',
   },
+}
+
+/**
+ * Discount codes carried in the outreach link. Each maps to the `_10off`
+ * Stripe Prices on the same products; `off` is display-only, since the Price
+ * is what actually charges.
+ */
+const PROMOS = {
+  partner10: { suffix: '_10off', off: 0.1, label: '10% partner discount' },
 }
 
 // No-tier landing: pick a tier, then find your listing by name + country so
@@ -216,6 +231,12 @@ export default function Checkout() {
 
   const tierKey = params.get('tier')
   const tier = TIERS[tierKey]
+
+  // An unknown ?promo= is ignored rather than rejected: outreach links are
+  // forwarded, edited and retyped, and a typo must never turn a working
+  // checkout into a dead end. Worst case the buyer pays the list price.
+  const promo = PROMOS[params.get('promo') || ''] || null
+  const promoAmount = tier ? Math.round(tier.amount_cents * (1 - (promo?.off ?? 0))) : 0
 
   const refParam = params.get('ref') || ''
   const creatorRef = /^creator_[a-z0-9_]{3,30}$/.test(refParam) ? refParam : null
@@ -437,11 +458,11 @@ export default function Checkout() {
                 </div>
 
                 <CheckoutForm
-                  amount_cents={tier.amount_cents}
+                  amount_cents={promoAmount}
                   currency="usd"
                   customer_email={email}
                   customer_external_id={pendingBusinessId}
-                  price_lookup_key={`insiderguide_${tier.key}`}
+                  price_lookup_key={`insiderguide_${tier.key}${promo ? promo.suffix : ''}`}
                   return_url={returnUrl}
                   theme={{ primary_color: '#c8a55a', label: tier.label }}
                 />
@@ -458,14 +479,28 @@ export default function Checkout() {
               <div className="font-display text-text text-[1.15rem] mb-1">
                 InsiderGuide {tier.name}
               </div>
-              <div className="flex items-baseline gap-2 mb-4">
+              <div className="flex items-baseline gap-2 mb-1">
+                {/* The struck-through list price only appears with a promo, so a
+                    full-price checkout is unchanged. The figure charged is the
+                    Stripe Price, which is why both come from the same source. */}
+                {promo && (
+                  <span className="font-display text-xl text-text-dim line-through decoration-1">
+                    ${(tier.amount_cents / 100).toFixed(0)}
+                  </span>
+                )}
                 <span className="font-display text-3xl text-text">
-                  ${(tier.amount_cents / 100).toFixed(0)}
+                  ${(promoAmount / 100).toFixed(0)}
                 </span>
                 <span className="text-[11px] text-text-dim tracking-[0.1em] uppercase font-light">
                   one-time
                 </span>
               </div>
+              {promo && (
+                <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] tracking-[0.08em] uppercase text-accent">
+                  {promo.label}
+                </div>
+              )}
+              {!promo && <div className="mb-4" />}
               <p className="text-text-secondary text-[13px] leading-[1.55] mb-4">
                 Reviewed by a country creator within 48 hours of payment. You{'’'}ll hear back either way with next steps.
               </p>

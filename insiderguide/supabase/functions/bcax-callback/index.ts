@@ -44,6 +44,14 @@ const LOOKUP_TO_TIER: Record<string, "featured" | "partner" | "complete"> = {
   insiderguide_featured: "featured",
   insiderguide_partner: "partner",
   insiderguide_complete: "complete",
+  // The 10% partner discount is a separate Stripe Price on the SAME product,
+  // not a coupon: IG checks out through a raw PaymentIntent, and Stripe
+  // coupons and promotion codes do not apply to PaymentIntents at all. The
+  // discounted keys must map to the same tiers, or a discounted sale would be
+  // charged and then never promote the listing.
+  insiderguide_complete_10off: "complete",
+  insiderguide_featured_10off: "featured",
+  insiderguide_partner_10off: "partner",
 };
 
 interface CallbackBody {
