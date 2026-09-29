@@ -42,6 +42,9 @@ const STATIC_ROUTES = [
   // /apply renders the same page but canonicalises to /creators, so only the
   // canonical URL belongs in the sitemap.
   { path: '/creators', priority: '0.7', changefreq: 'monthly' },
+  // /book is linked from outreach email, not from the site, so the sitemap is
+  // its only discovery path. Drop this line if it should stay unlisted.
+  { path: '/book', priority: '0.6', changefreq: 'monthly' },
 ]
 
 function xmlEscape(s) {

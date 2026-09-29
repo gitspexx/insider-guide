@@ -13,6 +13,12 @@ verify_jwt = true    # called from /creators with the publishable anon key as th
                      # check is not the access control here — the fn reads the row
                      # itself and returns a flat { ok: true } either way.
 
+[functions.notify-call-request]
+verify_jwt = true    # same posture as notify-creator-application: called from
+                     # /book with the publishable anon key as the bearer. The
+                     # gateway check is not the access control — the fn reads the
+                     # row itself and returns a flat { ok: true } either way.
+
 [functions.bcax-callback]
 verify_jwt = false   # BCAX payment webhook authenticates via X-BCAX-Callback-Key,
                      # not a JWT. verify_jwt=true 401s the dispatcher at the

@@ -33,6 +33,7 @@ supabase db push --project-ref qbzmsvfphpfgnlztskma
 
 # 2. Edge functions touched by the branch
 supabase functions deploy notify-creator-application --project-ref qbzmsvfphpfgnlztskma
+supabase functions deploy notify-call-request --project-ref qbzmsvfphpfgnlztskma
 
 # 3. Confirm both landed — this is what the build gate runs
 npm run preflight
@@ -88,6 +89,14 @@ round trip.
 | --- | --- |
 | `public.creator_applications` | `supabase/migrations/20260825120000_creator_applications.sql` |
 | `notify-creator-application` | `supabase/functions/notify-creator-application/` |
+| `public.call_requests` | `supabase/migrations/20260929120000_call_requests.sql` |
+| `notify-call-request` | `supabase/functions/notify-call-request/` |
 
-Both are **unapplied as of this commit.** `npm run preflight` fails today, by
+All four are **unapplied as of this commit.** `npm run preflight` fails today, by
 design, and will keep failing until step 1 and step 2 above are done.
+
+`call_requests` also seeds `reserved_handles` with `book`, so applying the
+migration is what stops a creator claiming the handle `/book` now shadows. Until
+it is applied the route works and the handle is unguarded — check
+`select 1 from creators where handle = 'book'` before applying if any creator was
+onboarded in the meantime.

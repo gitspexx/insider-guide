@@ -15,6 +15,7 @@ const Checkout = lazy(() => import('./pages/Checkout'))
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'))
 const Claim = lazy(() => import('./pages/Claim'))
 const CreatorApply = lazy(() => import('./pages/CreatorApply'))
+const Book = lazy(() => import('./pages/Book'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminCountry = lazy(() => import('./pages/admin/Country'))
@@ -59,6 +60,10 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
           <Route path="/claim" element={<Claim />} />
+          {/* Availability request for prospects who replied to outreach and want
+              a call before paying. 'book' is in reserved_handles (call_requests
+              migration) so no creator can take the handle this route shadows. */}
+          <Route path="/book" element={<Book />} />
           {/* /apply is an alias for /creators (canonical stays /creators). Both
               outrank the /:slug catch-all below regardless of declaration
               order — RR7 ranks branches by segment score, static 10 vs

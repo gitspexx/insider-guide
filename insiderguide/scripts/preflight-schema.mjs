@@ -25,8 +25,8 @@ const RUNBOOK = 'insiderguide/docs/deploy-runbook.md'
 // Every table a public page writes to, and every edge function it calls, that
 // is newer than the last deploy. Add a row here in the same commit that adds
 // the migration; delete it once the schema is old news.
-const REQUIRED_TABLES = ['creator_applications']
-const REQUIRED_FUNCTIONS = ['notify-creator-application']
+const REQUIRED_TABLES = ['creator_applications', 'call_requests']
+const REQUIRED_FUNCTIONS = ['notify-creator-application', 'notify-call-request']
 
 function loadEnv() {
   const env = { ...process.env }

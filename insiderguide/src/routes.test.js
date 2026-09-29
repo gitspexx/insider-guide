@@ -27,6 +27,18 @@ describe('public route table', () => {
     expect(matchedPath('/apply')).toBe('/apply')
   })
 
+  it('declares /book and resolves it ahead of the /:slug catch-all', () => {
+    expect(ROUTES.map((r) => r.path)).toEqual(expect.arrayContaining(['/book']))
+    expect(matchedPath('/book')).toBe('/book')
+  })
+
+  // /book/<anything> has no route of its own, so it falls to /:slug/:country and
+  // renders a country miss rather than the booking page. Asserted so nobody
+  // links /book/discovery-call from an email and wonders why it 404s.
+  it('does not match a second segment under /book', () => {
+    expect(matchedPath('/book/discovery-call')).toBe('/:slug/:country')
+  })
+
   it('still routes unknown single segments to the /:slug catch-all', () => {
     expect(matchedPath('/alexspexx')).toBe('/:slug')
     expect(matchedPath('/colombia')).toBe('/:slug')
