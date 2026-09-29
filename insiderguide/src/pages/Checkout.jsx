@@ -54,6 +54,11 @@ const PROMOS = {
 // outreach emails that don't carry a ?biz= reference.
 function FindYourBusiness({ creatorRef, promoCode }) {
   const navigate = useNavigate()
+  // The outreach reply says "10% already applied", so the very first price the
+  // owner sees must be the discounted one — not list price with a surprise
+  // later. Same PROMOS table the pay step uses; unknown codes fall through.
+  const pickerPromo = PROMOS[promoCode] || null
+  const pickerPrice = (cents) => Math.round(cents * (1 - (pickerPromo?.off ?? 0)))
   const [countries, setCountries] = useState([])
   const [tierPick, setTierPick] = useState('complete')
   const [countryId, setCountryId] = useState('')
@@ -124,6 +129,11 @@ function FindYourBusiness({ creatorRef, promoCode }) {
 
         {/* Step 1 — tier */}
         <div className="text-[11px] tracking-[0.12em] uppercase text-text-dim mb-3">1 · Choose your placement</div>
+        {pickerPromo && (
+          <div className="inline-block text-[10px] tracking-[0.14em] uppercase text-accent border border-accent/40 bg-accent/8 rounded-full px-3 py-1 mb-3">
+            {pickerPromo.label} — applied
+          </div>
+        )}
         <div className="grid sm:grid-cols-3 gap-3 mb-8">
           {Object.values(TIERS).map((t) => (
             <button
@@ -136,7 +146,14 @@ function FindYourBusiness({ creatorRef, promoCode }) {
               }`}
             >
               <div className="font-display text-lg text-text">{t.name}</div>
-              <div className="font-display text-2xl text-accent mb-1.5">${(t.amount_cents / 100).toFixed(0)}</div>
+              <div className="font-display text-2xl text-accent mb-1.5 flex items-baseline gap-2">
+                {pickerPromo && (
+                  <span className="text-base text-text-dim line-through decoration-text-dim/60">
+                    ${(t.amount_cents / 100).toFixed(0)}
+                  </span>
+                )}
+                <span>${(pickerPrice(t.amount_cents) / 100).toFixed(0)}</span>
+              </div>
               <div className="text-[11px] text-text-dim leading-relaxed">{t.description}</div>
             </button>
           ))}
