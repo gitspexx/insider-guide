@@ -36,6 +36,18 @@ describe('public route table', () => {
     expect(matchedPath('/apply')).toBe('/apply')
   })
 
+  it('declares the DM-only CTA page routes', () => {
+    expect(ROUTES.map((r) => r.path)).toEqual(expect.arrayContaining(['/g/:slug', '/g']))
+  })
+
+  it('resolves /g/<slug> ahead of the /:slug/:country catch-all', () => {
+    expect(matchedPath('/g/bali-5-spots-nobody-posts')).toBe('/g/:slug')
+    expect(matchedPath('/g')).toBe('/g')
+    // /g/:slug does not swallow deeper paths — a third segment matches no
+    // route at all, exactly as any other three-segment URL did before.
+    expect(matchedPath('/g/foo/bar')).toBeNull()
+  })
+
   it('still routes unknown single segments to the /:slug catch-all', () => {
     expect(matchedPath('/alexspexx')).toBe('/:slug')
     expect(matchedPath('/colombia')).toBe('/:slug')

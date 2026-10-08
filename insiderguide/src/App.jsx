@@ -16,6 +16,7 @@ const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess'))
 const Claim = lazy(() => import('./pages/Claim'))
 const CreatorApply = lazy(() => import('./pages/CreatorApply'))
 const Book = lazy(() => import('./pages/Book'))
+const CtaPage = lazy(() => import('./pages/CtaPage'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminCountry = lazy(() => import('./pages/admin/Country'))
@@ -85,6 +86,15 @@ export default function App() {
             <Route path="earnings" element={<StudioEarnings />} />
             <Route path="settings" element={<StudioSettings />} />
           </Route>
+          {/* /g/<slug>: DM-only CTA pages (guide / tips / link) read from the
+              content library at render time. A static first segment scores
+              13 against the /:slug/:country catch-all's 6, so the route wins
+              regardless of declaration order; `g` is in reserved_handles so
+              no creator can take a handle this route would shadow. Bare /g
+              renders the same page's "not available" state. noindex +
+              robots.txt Disallow: /g/. Guarded by routes.test.js. */}
+          <Route path="/g/:slug" element={<CtaPage />} />
+          <Route path="/g" element={<CtaPage />} />
           {/* V3: guides are creator-scoped — /<creator>/<country>. Bare
               /<country> URLs redirect to the covering creator's guide
               (handled inside CountryGuide). */}

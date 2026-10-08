@@ -11,6 +11,10 @@ services:
         VITE_META_PIXEL_ID: ${VITE_META_PIXEL_ID}
         VITE_TIKTOK_PIXEL_ID: ${VITE_TIKTOK_PIXEL_ID}
         VITE_CAPI_RELAY_URL: ${VITE_CAPI_RELAY_URL}
+        # Optional: content-library overrides for /g/<slug>; blank keeps the
+        # public defaults baked in src/lib/ctaPages.js.
+        VITE_CONTENTKO_SUPABASE_URL: ${VITE_CONTENTKO_SUPABASE_URL:-}
+        VITE_CONTENTKO_ANON_KEY: ${VITE_CONTENTKO_ANON_KEY:-}
         GITHUB_TOKEN: ${GITHUB_TOKEN}
     container_name: insider-guide-back
     restart: unless-stopped
