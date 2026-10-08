@@ -2,4 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /checkout
+# DM-only CTA pages. Trailing slash matters: a bare /g would also block
+# /germany, /greece and every creator handle starting with g.
+Disallow: /g/
 Sitemap: https://insiderguide.co/sitemap.xml

@@ -24,8 +24,9 @@ insiderguide/src/
   components/     # BusinessCard, CategoryFilter, LocationFilter, PaywallModal,
                   # EmailCapture(Popup), CampaignCreateModal, AdminRoute,
                   # CreatorRoute, creator/CreatorMap (maplibre, lazy chunk)
-  lib/            # supabase.js, themes.js (creator presets), takeoutParser.js
-  pages/          # Home, CountryGuide, CreatorPage
+  lib/            # supabase.js, themes.js (creator presets), takeoutParser.js,
+                  # ctaPages.js (content-library read for /g/<slug>)
+  pages/          # Home, CountryGuide, CreatorPage, CtaPage (/g/:slug, lazy)
   pages/studio/   # Login (magic link), StudioLayout, MySpots, Import, Settings
   pages/admin/    # Dashboard, Login, BusinessForm, CSVImport, CampaignDetail,
                   # Country, OutreachDashboard, Subscribers, Creators
@@ -49,6 +50,9 @@ insiderguide/src/
 
 ## Non-negotiable rules
 1. **Env vars passed as Docker build args.** Never hardcode Supabase keys.
+   One deliberate exception: `src/lib/ctaPages.js` bakes the content library's
+   PUBLIC anon URL/key (other project; RPC-only read) as defaults, overridable via
+   `VITE_CONTENTKO_SUPABASE_URL` / `VITE_CONTENTKO_ANON_KEY`. Never a service key.
 2. **Admin routes protected** by AdminRoute component.
 3. **Public pages must be fast.** No unnecessary client-side fetches on initial load.
 4. **Backend ships before `main`.** `.github/workflows/deploy.yml` auto-deploys the
