@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckoutForm } from '../components/checkout/CheckoutForm'
 import { supabase } from '../lib/supabase'
+import { finderCountries } from '../lib/checkoutCountries'
 import Seo from '../components/Seo'
 
 // IG tier pricing. These amounts are for DISPLAY: bcax-charge resolves the
@@ -66,14 +67,25 @@ function FindYourBusiness({ creatorRef, promoCode }) {
   const [results, setResults] = useState(null) // null = not searched yet
   const [searching, setSearching] = useState(false)
 
+  // Every country with claimable inventory, not just the 4 published ones —
+  // see finderCountries for why `published` was the wrong gate here. Both reads
+  // are anon-allowed (`Public can read all countries` is an unrestricted SELECT
+  // policy, and /partner already lists every country this way) and tiny: 78
+  // country rows and 78 count rows.
   useEffect(() => {
     let cancelled = false
-    supabase
-      .from('countries')
-      .select('id, name, flag_emoji')
-      .eq('published', true)
-      .order('name')
-      .then(({ data }) => { if (!cancelled) setCountries(data || []) })
+    async function load() {
+      // allSettled, not all: a rejected counts RPC must degrade to the full
+      // country list (finderCountries fails open), never to an empty select.
+      const [countryRes, countRes] = await Promise.allSettled([
+        supabase.from('countries').select('id, name, flag_emoji').order('name'),
+        supabase.rpc('country_business_counts'),
+      ])
+      const rows = countryRes.status === 'fulfilled' ? countryRes.value.data : null
+      const counts = countRes.status === 'fulfilled' ? countRes.value.data : null
+      if (!cancelled) setCountries(finderCountries(rows, counts))
+    }
+    load()
     return () => { cancelled = true }
   }, [])
 
@@ -292,6 +304,28 @@ export default function Checkout() {
   const [pendingBusinessId, setPendingBusinessId] = useState(null)
   const [creatingPending, setCreatingPending] = useState(false)
 
+  // Country for the pending row. The finder carries it in ?bizcountry=, and an
+  // invoice/retry link pays against an existing row, so neither needs this.
+  // A bare tier link (/checkout?tier=featured, which is what the partner page's
+  // tier buttons and the outreach emails use) carries nothing — and
+  // businesses.country_id is NOT NULL, so something has to go in.
+  const needsCountry = Boolean(tier) && !invoiceBizId && !unmatchedCountryId
+  const [countryOptions, setCountryOptions] = useState([])
+  const [countryId, setCountryId] = useState('')
+
+  useEffect(() => {
+    if (!needsCountry) return
+    let cancelled = false
+    // Every country, unfiltered: this row is quite likely a business we have
+    // never scraped, so inventory says nothing about where it is.
+    supabase
+      .from('countries')
+      .select('id, name, flag_emoji')
+      .order('name')
+      .then(({ data }) => { if (!cancelled) setCountryOptions(data || []) })
+    return () => { cancelled = true }
+  }, [needsCountry])
+
   // pendingBusinessId is appended as `?ref=` so the success page can show the
   // applicant a stable reference id without any backend round-trip. It's set
   // AFTER email submit (handleEmailSubmit), so the memo recomputes once known.
@@ -326,6 +360,12 @@ export default function Checkout() {
       return
     }
 
+    // The country has to be real before we write the row — see seedCountryId.
+    if (needsCountry && !countryId) {
+      setEmailError('Please pick the country your business is in')
+      return
+    }
+
     // Pre-create the pending businesses row. We need its id BEFORE Stripe
     // confirms — the bcax-callback needs a stable handle to flip on success.
     // If this fails (RLS/network), surface to user — DO NOT proceed to payment.
@@ -342,22 +382,15 @@ export default function Checkout() {
           ? `${emailLocal} (pending ${tier.name})`
           : `Pending ${tier.name} application`
 
-      // country_id is NOT NULL on businesses. The finder path passes the real
-      // country; otherwise seed the first published one (admin re-assigns on
-      // review — schema requires something).
-      let seedCountryId = unmatchedCountryId
+      // country_id is NOT NULL on businesses, so it is always the finder's
+      // ?bizcountry= or the one the buyer just picked. It used to fall back to
+      // "the first PUBLISHED country by name", which is Argentina — so every
+      // signup that skipped the finder became an Argentinian business someone
+      // had to re-assign by hand (2 such rows in production). Asking once is
+      // cheaper than matching later, and far cheaper than a wrong label.
+      const seedCountryId = unmatchedCountryId || countryId
       if (!seedCountryId) {
-        const { data: anyCountry, error: cErr } = await supabase
-          .from('countries')
-          .select('id')
-          .eq('published', true)
-          .order('name')
-          .limit(1)
-          .maybeSingle()
-        if (cErr || !anyCountry?.id) {
-          throw new Error('No countries available to seed pending row')
-        }
-        seedCountryId = anyCountry.id
+        throw new Error('Pick the country your business is in to continue')
       }
 
       // Client-generated id: the applicant role can INSERT but cannot SELECT
@@ -451,6 +484,29 @@ export default function Checkout() {
                     Used for the receipt and your application reply.
                   </p>
                 </div>
+
+                {needsCountry && (
+                  <div>
+                    <label className="block text-[11px] tracking-[0.12em] uppercase text-text-secondary mb-1.5" htmlFor="checkout-country">
+                      Country *
+                    </label>
+                    <select
+                      id="checkout-country"
+                      value={countryId}
+                      onChange={(e) => setCountryId(e.target.value)}
+                      required
+                      className="w-full bg-bg border border-border rounded-lg px-4 py-2.5 text-[14px] text-text focus:border-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 transition-all"
+                    >
+                      <option value="">Where is your business?</option>
+                      {countryOptions.map((c) => (
+                        <option key={c.id} value={c.id}>{c.flag_emoji} {c.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-text-dim mt-1.5">
+                      So your listing reaches the creator who covers it.
+                    </p>
+                  </div>
+                )}
 
                 {emailError && (
                   <p className="text-red-400/80 text-[12px] font-light">{emailError}</p>
